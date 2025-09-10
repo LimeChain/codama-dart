@@ -11,8 +11,13 @@ export function dartDocblock(docs: string[]): string {
 }
 
 export const render = (template: string, context?: object, options?: NunJucksOptions): string => {
-    // @ts-expect-error import.meta will be used in the right environment.
-    const dirname = __ESM__ ? pathDirname(fileURLToPath(import.meta.url)) : __dirname;
+    let dirname: string;
+    // Safely resolve dirname for both ESM and CommonJS environments
+    if (typeof import.meta !== 'undefined' && import.meta.url) {
+        dirname = pathDirname(fileURLToPath(import.meta.url));
+    } else {
+        dirname = __dirname;
+    }
     const templates = __TEST__ ? join(dirname, '..', '..', 'public', 'templates') : join(dirname, 'templates');
     const env = nunjucks.configure(templates, { autoescape: false, trimBlocks: true, ...options });
     env.addFilter('pascalCase', pascalCase);
