@@ -1,0 +1,143 @@
+{% extends "layout.njk" %}
+{% import "macros.njk" as macros %}
+
+{% block main %}
+{{ imports }}
+
+/// Generated type definition for {{ definedType.name | pascalCase }}.
+///
+{% if definedType.docs.length > 0 %}
+  {% for doc in definedType.docs %}
+  /// {{ doc }}
+  {% endfor %}
+{% endif %}
+{# This is the line that puts the Struct/Enum definition #}
+{{ typeManifest.type | safe }}
+
+{% if definedType.type.kind === 'enumTypeNode' %}
+/// Extension providing serialization methods for {{ definedType.name | pascalCase }}.
+///
+extension {{ definedType.name | pascalCase }}Borsh on {{ definedType.name | pascalCase }} {
+  /// Converts the enum to a byte representation.
+  void toBorsh(BinaryWriter writer) {
+    {# Initial idx value used to track which field from fields collection is reached #}
+    {% set startIdx = 0 %} 
+    {% for variant in definedType.type.variants %}
+      {% if variant.kind == 'enumEmptyVariantTypeNode' %}
+        {# The enum is empty but i still need to specify the Variant Index in Borsh Serialization #}
+        if (this is {{ variant.name | pascalCase }}) {
+          writer.writeU8({{ loop.index0 }}); // Variant index expected by Borsh
+        }
+      {% endif %}
+
+      {% if variant.kind != 'enumEmptyVariantTypeNode' %}
+        if (this is {{ variant.name | pascalCase }}) {
+          {# Count of fields that this Variant has #}
+          {% 
+            set count = variant.tuple.items | length 
+              if variant.kind == 'enumTupleVariantTypeNode' 
+              else variant.struct.fields | length 
+          %}
+
+          {% set indices = range(startIdx, startIdx + count) %}  {# Index range for this enum Variant's fields #}
+          writer.writeU8({{ loop.index0 }}); // Variant index expected by Bors
+          final v = this as {{ variant.name | pascalCase }};
+          
+          {% for i in indices %}
+            {% if fields[i].optional %}
+              writer.writeU8(v.{{ fields[i].name}} != null ? 1 : 0);
+              if (v.{{ fields[i].name}} != null) {
+                {{ macros.borshWriter(fields[i], 'v.' ~ fields[i].name ~ '!') }}
+              }
+            {% else %}
+              {{ macros.borshWriter(fields[i], 'v.' ~ fields[i].name) }}
+            {% endif %}
+          {% endfor %}
+          {# Move the startIdx forward by count of fields just processed #}
+          {% set startIdx = startIdx + count %}
+        }
+      {% endif %}
+    {% endfor %}
+  }
+
+  /// Creates an enum from a byte representation.
+  static {{ definedType.name | pascalCase }} fromBorsh(BinaryReader reader) {
+    {# return {{ definedType.name | pascalCase }}( #}
+    {% set startIdx = 0 %}
+    final variant = reader.readU8();
+    switch (variant) {
+      {% for variant in definedType.type.variants %}
+        case {{ loop.index0 }}:
+          return {{ variant.name | pascalCase }}(
+            {% if variant.kind != 'enumEmptyVariantTypeNode' %}
+              {# Count of fields that the current Variant has #}
+              {% 
+                set count = variant.tuple.items | length 
+                  if variant.kind == 'enumTupleVariantTypeNode' 
+                  else variant.struct.fields | length 
+              %}
+              {% set indices = range(startIdx, startIdx + count) %} {# Index range for this enum Variant's fields #}
+
+              {# Loop through the fields for this Variant and generate the reading code #}
+              {% for i in indices %}
+                {% set prefix = '' if variant.kind == 'enumTupleVariantTypeNode' else fields[i].name ~ ': ' %}
+                {{ prefix }}
+
+                {% if fields[i].optional %}
+                  reader.readU8() == 1 ? {{ macros.borshReader(fields[i]) }} : null{% if not loop.last %}, {% endif %}
+                {% else %}
+                  {{ macros.borshReader(fields[i]) }}{% if not loop.last %}, {% endif %}
+                {% endif %}
+              {% endfor %}
+
+              {# Move the startIdx forward by count of fields just processed #}
+              {% set startIdx = startIdx + count %}
+            {% endif %}
+          );
+      {% endfor %}
+      default:
+        throw Exception('Unknown {{definedType.name}} variant: $variant');
+    }
+  }
+}
+
+{% elif definedType.type.kind === 'structTypeNode' %}
+/// Extension providing serialization methods for {{ definedType.name | pascalCase }}.
+///
+extension {{ definedType.name | pascalCase }}Borsh on {{ definedType.name | pascalCase }} {
+  /// Serializes the struct to its byte representation.
+  void toBorsh(BinaryWriter writer) {
+  {% for field in fields %}
+    {% if field.optional %}
+      writer.writeU8({{ field.name }} != null ? 1 : 0);
+      if ({{ field.name }} != null) {
+        {{ macros.borshWriter(field) | replace(field.name, field.name ~ '!') }}
+      }
+    {% else %}
+      {{ macros.borshWriter(field) }}
+    {% endif %}
+  {% endfor %}
+  }
+
+  /// Creates a struct from its byte representation.
+  static {{ definedType.name | pascalCase }} fromBorsh(BinaryReader reader) {
+    return {{ definedType.name | pascalCase }}(
+      {% for field in fields %}
+        {% if field.optional%}
+          {{ field.name }}: reader.readU8() == 1 
+            ? {{ macros.borshReader(field) }} 
+            : null,
+        {% else %}
+          {{ field.name }}: {{ macros.borshReader(field) }},
+        {% endif %}
+      {% endfor %}
+    );
+  }
+}
+
+{% endif %}
+
+{% for nestedStruct in typeManifest.nestedStructs %}
+  {{ nestedStruct }}
+{% endfor %}
+{% endblock %}
