@@ -82,7 +82,8 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                             // Fixed-size typed array handler
                             return {
                                 ...typedArrayManifest,
-                                type: `${typedArrayManifest.type}`,
+                                // If is a fixed-sized array, include the length in a comment so i can extract that using regex
+                                type: `${typedArrayManifest.type} /* length: ${arrayType.count.value} */`,
                             };
                         }
                         return typedArrayManifest;
@@ -266,14 +267,25 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                         default:
                             throw new Error(`Unknown number format: ${numberType.format}`);
                     }
-                },
+                }, 
 
                 visitOptionType(optionType: OptionTypeNode, { self }: { self: Visitor<TypeManifest> }): TypeManifest {
                     const childManifest = visit(optionType.item, self);
 
+                     // Regex to split type and comment (e.g., 'Uint32List /* length: 2 */')
+                    const typeMatch = childManifest.type.match(/^([^\s]+)(.*)$/);
+                    let typeWithOptional: string;
+
+                    if (typeMatch) {
+                        typeWithOptional = `${typeMatch[1]}?${typeMatch[2]}`;
+                    } else {
+                        // Fallback if regex fails
+                        typeWithOptional = `${childManifest.type}?`;
+                    }
+            
                     return {
                         ...childManifest,
-                        type: `${childManifest.type}?`,
+                        type: typeWithOptional,
                     };
                 },
 
@@ -318,7 +330,7 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                     inlineStruct = false;
 
                     const fieldManifest = visit(structFieldType.type, self);
-
+     
                     parentName = originalParentName;
                     inlineStruct = originalInlineStruct;
                     nestedStruct = originalNestedStruct;
@@ -331,7 +343,7 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                         field: `${docblock} final ${fieldManifest.type} ${fieldName};`,
                         imports: fieldManifest.imports,
                         nestedStructs: fieldManifest.nestedStructs,
-                        type: fieldManifest.type,                    
+                        type: fieldManifest.type,  
                     };
                 },
 
@@ -341,11 +353,9 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                     const structName = originalParentName || 'AnonymousStruct';
                     
                     // In Dart, every variable must be initialized, either via constructor or with a default value.
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
                     const classConstrutor = `  ${pascalCase(structName)}({\n${structType.fields.map((field) => `    required this.${snakeCase(field.name)},`).join('\n')}\n  });\n`;
 
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                    const fields = structType.fields.map((field) =>
+                    const fields = structType.fields.map((field: StructFieldTypeNode) =>
                         visit(field, self)
                     );
                     const fieldTypes = fields.map((field) => field.field).join('\n');
