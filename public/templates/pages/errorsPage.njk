@@ -14,19 +14,6 @@ class {{ program.name | pascalCase }}ErrorCode {
 
 /// Base class for all {{ program.name | pascalCase }} program errors.
 abstract class {{ program.name | pascalCase }}Error extends Error {
-
-  /// Utility: Extracts and maps a Solana error string to an {{program.name | pascalCase }}Error, or null if not found.
-  static {{program.name | pascalCase}}Error? fromSolanaErrorString(Object error) {
-    final errorString = error.toString();
-    final match = RegExp(r'custom program error: 0x([0-9a-fA-F]+)').firstMatch(errorString);
-    if (match != null) {
-      final codeHex = match.group(1);
-      final code = int.parse(codeHex!, radix: 16);
-      return {{ program.name | pascalCase }}Error.fromCode(code);
-    }
-    return null;
-  }
-
   /// The numerical error code.
   final int code;
   
