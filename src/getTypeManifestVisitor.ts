@@ -88,7 +88,7 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                         }
                         return typedArrayManifest;
                     }
-
+                    
                     return {
                         ...childManifest,
                         type: `List<${childManifest.type}>`,
