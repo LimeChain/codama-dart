@@ -281,6 +281,11 @@ class BinaryReader {
     );
   }
 
+  // Reads a fixed-length array of generic items.
+  List<T> readFixedArray<T>(int length, T Function() itemReader) {
+    return List.generate(length, (_) => itemReader());
+  }
+
   /// Reads a variable-length array of generic items.
   List<T> readArray<T>(T Function() itemReader) {
     final count = readU32();
@@ -425,7 +430,10 @@ class BinaryWriter {
 
   /// Writes a signed 64-bit integer.
   void writeI64(BigInt value) {
-    writeU64(value & (BigInt.one << 64) - BigInt.one);
+    var v = value.toSigned(64);
+    for (int i = 0; i < 8; i++) {
+      _bytes.add(((v >> (8 * i)) & BigInt.from(0xFF)).toInt());
+    }
   }
 
   /// Writes a string.
@@ -567,6 +575,23 @@ class BinaryWriter {
   void writeBytes(Uint8List value) {
     writeU32(value.length);
     _bytes.addAll(value);
+  }
+
+  // Reads a fixed-length array of generic items.
+  // List<T> readFixedArray<T>(int length, T Function() itemReader) {
+  //   return List.generate(length, (_) => itemReader());
+  // }
+
+  void writeFixedArray<T>(
+      int length, List<T> items, void Function(T) itemWriter) {
+    final count = length ?? items.length;
+    if (items.length < count) {
+      throw ArgumentError(
+          'items length (${items.length}) is less than fixed array length ($count)');
+    }
+    for (int i = 0; i < count; i++) {
+      itemWriter(items[i]);
+    }
   }
 
   /// Writes a variable-length array of generic items.
