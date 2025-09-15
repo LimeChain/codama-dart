@@ -4,6 +4,7 @@ import {
     DefinedTypeNode,
     getAllAccounts,
     getAllDefinedTypes,
+    getAllErrors,
     getAllInstructionsWithSubs,
     getAllPdas,
     getAllPrograms,
@@ -134,7 +135,8 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                         const baseType = getBaseType(field.type).replace(/\?$/, ''); // Remove optional marker `?` for the check
                         return {
                             ...field,
-                            isStruct: structTypeNames.has(baseType)
+                            baseType: baseType,
+                            isStruct: structTypeNames.has(baseType),
                         }
                     });
 
@@ -269,6 +271,8 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                     const instructionsToExport = getAllInstructionsWithSubs(node, {
                         leavesOnly: !renderParentInstructions,
                     });
+
+                    const errorsToExport = getAllErrors(node);
                     const definedTypesToExport = getAllDefinedTypes(node);
                     const hasAnythingToExport =
                         programsToExport.length > 0 ||
@@ -280,6 +284,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                     const ctx = {
                         accountsToExport,
                         definedTypesToExport,
+                        errorsToExport,
                         hasAnythingToExport,
                         instructionsToExport,
                         pdasToExport,
@@ -289,7 +294,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
 
                     let renders: RenderMap = renderMap();
                     if (accountsToExport.length > 0) {
-                        renders = addToRenderMap(renders, 'shared.dart', renderTemplate('sharedPage.njk', ctx));
+                        renders = addToRenderMap(renders, 'shared.dart', renderTemplate('sharedPage.njk', { ...ctx}));
                     }
                     if (programsToExport.length > 0) {
                         const programsImports = new ImportMap().add('package:solana/solana.dart', new Set(['Ed25519HDPublicKey']));
@@ -306,28 +311,29 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                             r => addToRenderMap(
                                 r,
                                 'errors.dart',
-                                renderTemplate('errorsMod.njk', { ctx })
+                                renderTemplate('errorsMod.njk', { ...ctx })
                             )
                         );
                     }
 
                     if (pdasToExport.length > 0) {
-                        renders = addToRenderMap(renders, 'pdas.dart', renderTemplate('pdasMod.njk', ctx));
+                        renders = addToRenderMap(renders, 'pdas.dart', renderTemplate('pdasMod.njk', { ...ctx }));
                     }
                     if (accountsToExport.length > 0) {
-                        renders = addToRenderMap(renders, 'accounts.dart', renderTemplate('accountsMod.njk', ctx));
+                        renders = addToRenderMap(renders, 'accounts.dart', renderTemplate('accountsMod.njk', { ...ctx }));
                     }
                     if (instructionsToExport.length > 0) {
-                        renders = addToRenderMap(renders, 'instructions.dart', renderTemplate('instructionsMod.njk', ctx));
+                        renders = addToRenderMap(renders, 'instructions.dart', renderTemplate('instructionsMod.njk', { ...ctx}));
                     }
                     if (definedTypesToExport.length > 0) {
-                        renders = addToRenderMap(renders, 'types.dart', renderTemplate('definedTypesMod.njk', ctx));
+                        renders = addToRenderMap(renders, 'types.dart', renderTemplate('definedTypesMod.njk', { ...ctx}));
                     }
+
 
                     return pipe(
                         renders,
-                        (r: RenderMap): RenderMap => addToRenderMap(r, 'mod.dart', renderTemplate('rootMod.njk', ctx)),
-                        (r: RenderMap): RenderMap => addToRenderMap(r, 'lib.dart', renderTemplate('rootMod.njk', ctx)),
+                        (r: RenderMap): RenderMap => addToRenderMap(r, 'mod.dart', renderTemplate('rootMod.njk', { ...ctx })),
+                        (r: RenderMap): RenderMap => addToRenderMap(r, 'lib.dart', renderTemplate('rootMod.njk', { ...ctx })),
                         (r: RenderMap): RenderMap => mergeRenderMaps(
                             [r, ...getAllPrograms(node).map((p) => visit(p, self) as RenderMap)]
                         ),
