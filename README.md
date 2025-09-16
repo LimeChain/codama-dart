@@ -4,6 +4,8 @@ This package provides a Solana Dart client renderer for [Codama](https://github.
 
 This tool is in beta, so please report any issues or feedback.
 
+> For a full example project using this renderer, see [codama-dart-example](https://github.com/LimeChain/codama-dart-examples).
+
 ## Installation
 
 ```sh
