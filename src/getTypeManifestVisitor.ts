@@ -82,7 +82,8 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                             // Fixed-size typed array handler
                             return {
                                 ...typedArrayManifest,
-                                type: `${typedArrayManifest.type}`,
+                                // If is a fixed-sized array, include the length in a comment so i can extract that using regex
+                                type: `${typedArrayManifest.type} /* length: ${arrayType.count.value} */`,
                             };
                         }
                         return typedArrayManifest;
@@ -238,42 +239,93 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                 visitNumberType(numberType: NumberTypeNode): TypeManifest {
                     switch (numberType.format) {
                         case 'u8':
-                        case 'u16':
-                        case 'u32':
+                            return {
+                                imports: new ImportMap(),
+                                nestedStructs: [],
+                                type: 'int /* type: u8 */',
+                            };
                         case 'i8':
+                            return {
+                                imports: new ImportMap(),
+                                nestedStructs: [],
+                                type: 'int /* type: i8 */',
+                            };
+                        case 'u16':
+                            return {
+                                imports: new ImportMap(),
+                                nestedStructs: [],
+                                type: 'int /* type: u16 */',
+                            };
                         case 'i16':
+                            return {
+                                imports: new ImportMap(),
+                                nestedStructs: [],
+                                type: 'int /* type: i16 */',
+                            };
+                        case 'u32':
+                            return {
+                                imports: new ImportMap(),
+                                nestedStructs: [],
+                                type: 'int /* type: u32 */',
+                            };
                         case 'i32':
                             return {
                                 imports: new ImportMap(),
                                 nestedStructs: [],
-                                type: 'int',
+                                type: 'int /* type: i32 */',
                             };
                         case 'u64':
+                            return {
+                                imports: new ImportMap(),
+                                nestedStructs: [],
+                                type: 'BigInt /* type: u64 */',
+                            };
                         case 'i64':
+                            return {
+                                imports: new ImportMap(),
+                                nestedStructs: [],
+                                type: 'BigInt /* type: i64 */',
+                            };
                         case 'u128':
+                            return {
+                                imports: new ImportMap(),
+                                nestedStructs: [],
+                                type: 'BigInt /* type: u128 */',
+                            };
                         case 'i128':
                             return {
                                 imports: new ImportMap(),
                                 nestedStructs: [],
-                                type: 'BigInt',
+                                type: 'BigInt /* type: i128 */',
                             };
                         case 'shortU16':
                             return {
                                 imports: new ImportMap(),
                                 nestedStructs: [],
-                                type: 'int',
+                                type: 'int /* type: shortU16 */',
                             };
                         default:
                             throw new Error(`Unknown number format: ${numberType.format}`);
                     }
-                },
+                }, 
 
                 visitOptionType(optionType: OptionTypeNode, { self }: { self: Visitor<TypeManifest> }): TypeManifest {
                     const childManifest = visit(optionType.item, self);
 
+                     // Regex to split type and comment (e.g., 'Uint32List /* length: 2 */')
+                    const typeMatch = childManifest.type.match(/^([^\s]+)(.*)$/);
+                    let typeWithOptional: string;
+
+                    if (typeMatch) {
+                        typeWithOptional = `${typeMatch[1]}?${typeMatch[2]}`;
+                    } else {
+                        // Fallback if regex fails
+                        typeWithOptional = `${childManifest.type}?`;
+                    }
+            
                     return {
                         ...childManifest,
-                        type: `${childManifest.type}?`,
+                        type: typeWithOptional,
                     };
                 },
 
@@ -318,7 +370,7 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                     inlineStruct = false;
 
                     const fieldManifest = visit(structFieldType.type, self);
-
+                    
                     parentName = originalParentName;
                     inlineStruct = originalInlineStruct;
                     nestedStruct = originalNestedStruct;
@@ -331,7 +383,7 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                         field: `${docblock} final ${fieldManifest.type} ${fieldName};`,
                         imports: fieldManifest.imports,
                         nestedStructs: fieldManifest.nestedStructs,
-                        type: fieldManifest.type,                    
+                        type: fieldManifest.type,      
                     };
                 },
 
@@ -345,9 +397,10 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                     const classConstrutor = `  ${pascalCase(structName)}({\n${structType.fields.map((field) => `    required this.${snakeCase(field.name)},`).join('\n')}\n  });\n`;
 
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                    const fields = structType.fields.map((field) =>
+                    const fields = structType.fields.map((field: StructFieldTypeNode) =>
                         visit(field, self)
                     );
+
                     const fieldTypes = fields.map((field) => field.field).join('\n');
                     const mergedManifest = {
                         imports: new ImportMap().mergeWith(...fields.map((f) => f.imports)),
