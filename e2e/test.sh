@@ -8,7 +8,7 @@ function print_dart_errors() {
     NC='\033[0m'
     if grep -q 'error ' "$log_file"; then
         echo ""
-        echo -e "${RED}==================== Dart Analysis Errors in $project ====================${NC}"
+        echo -e "${RED}==================== E2E TESTS FAILED IN PROJECT: $project ====================${NC}"
         echo ""
         grep 'error ' "$log_file" | sed 's/^/    /'
         echo ""
@@ -31,8 +31,12 @@ function test_project() {
 }
 
 function test_anchor_project() {
-    ./e2e/generate-anchor.cjs $1 
+    ./e2e/generate-anchor.cjs $1
     cd e2e/$1
+
+    dart analyze > analyze.log || true
+    print_dart_errors "$1" analyze.log
+
     cd ../..
 }
 
