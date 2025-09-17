@@ -27,7 +27,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "pnpm test:types && pnpm test:treeshakability && pnpm test:node && pnpm test:e2e && pnpm test:exports",
-    "test:e2e": "sh ./e2e/test.sh",
+    "test:e2e": "bash ./e2e/test.sh",
     "test:exports": "node ./test/exports/module.mjs && node ./test/exports/commonjs.cjs",
     "test:node": "zx ./scripts/test-unit.mjs node",
     "test:treeshakability": "zx ./scripts/test-treeshakability.mjs",
