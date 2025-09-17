@@ -9,6 +9,9 @@ lerna-debug.log*
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
+# e2e test generated clients
+e2e/**/lib/generated
+
 # Runtime data
 pids
 *.pid
@@ -40,6 +43,7 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+.dart_tool
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
