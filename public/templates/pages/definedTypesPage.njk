@@ -23,6 +23,13 @@ extension {{ definedType.name | pascalCase }}Borsh on {{ definedType.name | pasc
     {# Initial idx value used to track which field from fields collection is reached #}
     {% set startIdx = 0 %} 
     {% for variant in definedType.type.variants %}
+      {% if variant.kind == 'enumEmptyVariantTypeNode' %}
+        {# The enum is empty but i still need to specify the Variant Index in Borsh Serialization #}
+        if (this is {{ variant.name | pascalCase }}) {
+          writer.writeU8({{ loop.index0 }}); // Variant index expected by Borsh
+        }
+      {% endif %}
+
       {% if variant.kind != 'enumEmptyVariantTypeNode' %}
         if (this is {{ variant.name | pascalCase }}) {
           {# Count of fields that this Variant has #}
@@ -33,6 +40,7 @@ extension {{ definedType.name | pascalCase }}Borsh on {{ definedType.name | pasc
           %}
 
           {% set indices = range(startIdx, startIdx + count) %}  {# Index range for this enum Variant's fields #}
+          writer.writeU8({{ loop.index0 }}); // Variant index expected by Bors
           final v = this as {{ variant.name | pascalCase }};
           
           {% for i in indices %}

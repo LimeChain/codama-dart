@@ -52,14 +52,18 @@
       {{ baseTypeReader(baseType, false, size, format) }}
     {% endif %}
   {% else %}
-    reader.readArray(() {
+      {% if size is defined %}
+        reader.readFixedArray({{size}}, () {
+      {% else %}
+        reader.readArray(() {
+      {% endif %}
       {% if isStruct %}
         // item is a struct, call fromBorsh per item
         return {{ baseType }}Borsh.fromBorsh(reader);
       {% else %}
         return {{ recursiveReader(depth - 1, baseType, false, size, format) }};
       {% endif %}
-    })
+      })
   {% endif %}
 {% endmacro %}
 
@@ -173,14 +177,18 @@
       {{ baseTypeWriter(baseType, varName, size, format) }};
     {% endif %}
   {% else %}
-    writer.writeArray<{{ baseType }}>({{ varName }}, ({{ baseType }} item) {
-      {% if isStruct %}
-        // Each item is a struct
-        item.toBorsh(writer);
-      {% else %}
-        {{ recursiveWriter("item", depth - 1, baseType, false, size, format) }};
-      {% endif %}
-    });
+    {% if size is defined %}
+      writer.writeFixedArray<{{ baseType }}>({{size}}, {{ varName }}, ({{ baseType }} item) {
+    {% else %}
+      writer.writeArray<{{ baseType }}>({{ varName }}, ({{ baseType }} item) {
+    {% endif %}
+    {% if isStruct %}
+      // Each item is a struct
+      item.toBorsh(writer);
+    {% else %}
+      {{ recursiveWriter("item", depth - 1, baseType, false, size, format) }};
+    {% endif %}
+  });
   {% endif %}
 {% endmacro %}
 

@@ -28,7 +28,7 @@ import {
 } from '@codama/nodes';
 import { extendVisitor, mergeVisitor, pipe, visit, Visitor } from '@codama/visitors-core';
 
-import { getDartTypedArrayType } from './fragments/dartTypedArray';
+import { getDartTypedArrayType } from './utils/dartTypedArray';
 import { ImportMap } from './ImportMap';
 import TypeManifest, { TypeManifestOptions } from './TypeManifest';
 import { dartDocblock } from './utils';
@@ -88,7 +88,7 @@ export function getTypeManifestVisitor(options: TypeManifestOptions) {
                         }
                         return typedArrayManifest;
                     }
-
+                    
                     return {
                         ...childManifest,
                         type: `List<${childManifest.type}>`,
