@@ -12,20 +12,30 @@ This tool is in beta, so please report any issues or feedback.
 pnpm install codama-dart
 ```
 
-## Standalone Usage
-To use Codama-dart independently (not as a library), you can clone the repository and use the built-in CLI tool:
+## Using with Codama configuration
+When you have installed Codama IDL, you can use as a renderer plugin via Codama's configuration system.
+Just add the following script to your Codama configuration file.
 
-```sh
-git clone https://github.com/LimeChain/codama-dart
-cd codama-dart
 
-pnpm install
-
-pnpm build
+```json
+{
+  "scripts": {
+      "dart": {
+          "from": "@codama/renderers-dart",
+          "args": [
+              "clients/dart/src/generated",
+              {
+                  "crateFolder": "clients/dart",
+                  "formatCode": true
+              }
+          ]
+      }
+  }
+}
 ```
 
-## Usage
-Once you have Codama IDL, you can use the `renderVisitor` of this package to generate Dart clients. Provide the base directory where the generated files will be saved and an optional set of options to customize the output.
+## Using programmatically in Node.js
+You can also use this package directly in your own Node.js scripts. This approach is ideal if you want to generate Dart clients programmatically, giving you full control over the generation process and output options. Simply import the `renderVisitor` function and use it as shown below:
 
 ```ts
 // create-codama-client.js
