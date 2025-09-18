@@ -33,6 +33,8 @@ Just add the following script to your Codama configuration file.
   }
 }
 ```
+For more details on configuring Codama using a config file, see the official [Codama CLI documentation](https://github.com/codama-idl/codama/blob/main/packages/cli/README.md)
+
 
 ## Using programmatically in Node.js
 You can also use this package directly in your own Node.js scripts. This approach is ideal if you want to generate Dart clients programmatically, giving you full control over the generation process and output options. Simply import the `renderVisitor` function and use it as shown below:
