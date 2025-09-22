@@ -40,23 +40,7 @@
       {% endfor %}
     {% endif %}
 
-    {{ instruction.name | pascalCase }}Instruction({
-      {% for account in instruction.accounts -%}
-        {%- if account.isOptional -%}
-          this.{{ account.name | snakeCase }},
-        {%- else -%}
-          required this.{{ account.name | snakeCase }},
-        {%- endif -%}
-        {%- if account.isSigner === 'either' -%}
-          this.{{ account.name | snakeCase }}IsSigner = false,
-        {%- endif -%}
-      {%- endfor -%}
-      {%- if args and args.length > 0 -%}
-        {%- for arg in args -%}
-          required this.{{ arg.name | snakeCase }},
-        {%- endfor -%}
-      {%- endif -%}
-    });
+    {{ instructionConstructorFragmentResult }}
 
     /// Builds the `Instruction` (data = discriminator + args).
     Instruction toInstruction({ List<AccountMeta> remainingAccounts = const [] }) {

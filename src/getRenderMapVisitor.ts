@@ -33,6 +33,7 @@ import { ImportMap } from './ImportMap';
 import TypeManifest, { extractFieldsFromTypeManifest } from './TypeManifest';
 import { extractDiscriminatorBytes, getImportFromFactory, LinkOverrides, render } from './utils';
 import getAllDefinedTypesInNode from './utils/getAllDefinedTypesInNode';
+import instructionConstructorFragment from './fragments/InstructionConstructor';
 
 
 export type GetRenderMapOptions = {
@@ -153,6 +154,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                 },
 
                 visitInstruction(node) {
+                    // Collect all accounts with a defaultValue of kind 'publicKeyValueNode', map to snake_case name and publicKey
                     const instructionPath = stack.getPath('instructionNode');
                     const programNode = findProgramNodeFromPath(instructionPath);
                     if (!programNode) {
@@ -204,7 +206,8 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                             isStruct: structTypeNames.has(baseType)
                         }
                     });
-            
+
+                    const instructionConstructorFragmentResult = instructionConstructorFragment(node.name, node.accounts, args);
                     const context = {
                         args,
                         fields: fields,
@@ -215,6 +218,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                         },
                         program: { name: pascalCase(programNode.name || '') },
                         typeManifest: typeManifest || { nestedStructs: [] },
+                        instructionConstructorFragmentResult,
                     };
 
                     return addToRenderMap(
