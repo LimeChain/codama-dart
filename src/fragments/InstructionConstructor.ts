@@ -4,6 +4,7 @@ type Arg = {
     name: string;   
 };
 
+// Generates the Dart constructor argument and initializer fragment for the Dart representation of Solana instruction.
 export default function instructionConstructorFragment(
     instructionName: string,
     accounts: any[],
@@ -13,6 +14,7 @@ export default function instructionConstructorFragment(
     let defaultAccounts: Record<string, string> = {};
 
     for (const account of accounts) {
+        // Handle Default Value for nodes that have them and they are public keys
         if (account.defaultValue && account.defaultValue.kind === "publicKeyValueNode") {
             let accountName = snakeCase(account.name);
             fragment += `Ed25519HDPublicKey? ${accountName},\n`;
@@ -36,6 +38,7 @@ export default function instructionConstructorFragment(
 
     fragment += `})`;
 
+    // If there are default accounts, set each default account to its default value if not provided
     if (Object.keys(defaultAccounts).length > 0) { 
         fragment += ` : \n`;
         const defaults = Object.entries(defaultAccounts).map(
