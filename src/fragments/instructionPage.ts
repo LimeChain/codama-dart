@@ -17,19 +17,16 @@ export function getInstructionPageFragment(
 
     const fragments: Fragment[] = [];
 
-    // Generate instruction data type (arguments)
     const dataFragment = getInstructionDataFragment(scope);
     if (dataFragment) {
         fragments.push(dataFragment);
     }
 
-    // Generate instruction function
     const functionFragment = getInstructionFunctionFragment(scope);
     if (functionFragment) {
         fragments.push(functionFragment);
     }
 
-    // Combine all fragments
     const content = fragments.map(f => f.content).join('\n\n');
     const imports = new Set<string>();
     fragments.forEach(f => f.imports.forEach(imp => imports.add(imp)));

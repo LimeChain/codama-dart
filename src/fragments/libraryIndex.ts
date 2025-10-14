@@ -1,5 +1,4 @@
-import { getAllInstructionsWithSubs, getAllPrograms } from '@codama/nodes';
-import { RootNode } from '@codama/nodes';
+import { getAllInstructionsWithSubs, getAllPrograms, RootNode } from '@codama/nodes';
 
 import { Fragment } from '../utils';
 
@@ -10,39 +9,35 @@ export function getLibraryIndexFragment(scope: { rootNode: RootNode }): Fragment
     const exports: string[] = [];
 
     programs.forEach(program => {
+        // Export accounts
         program.accounts.forEach(account => {
             exports.push(`export 'accounts/${account.name}.dart';`);
         });
-    });
 
-    programs.forEach(program => {
-        getAllInstructionsWithSubs(program, { leavesOnly: true }).forEach(instruction => {
+        // Export instructions
+        const instructions = getAllInstructionsWithSubs(program, { leavesOnly: true });
+        instructions.forEach(instruction => {
             exports.push(`export 'instructions/${instruction.name}.dart';`);
-        });
-    });
-
-    programs.forEach(program => {
-        program.definedTypes.forEach(type => {
-            if (type.type.kind === 'structTypeNode') {
-                exports.push(`export 'types/${type.name}.dart';`);
-            }
-        });
-    });
-
-    programs.forEach(program => {
-        if (program.errors.length > 0) {
-            exports.push(`export 'errors/${program.name}.dart';`);
-        }
-    });
-
-    programs.forEach(program => {
-        getAllInstructionsWithSubs(program, { leavesOnly: true }).forEach(instruction => {
+            
+            // Export PDAs from instruction accounts
             instruction.accounts.forEach(account => {
                 if (account.defaultValue?.kind === 'pdaValueNode') {
                     exports.push(`export 'pdas/${account.name}.dart';`);
                 }
             });
         });
+
+        // Export defined types
+        program.definedTypes.forEach(type => {
+            if (type.type.kind === 'structTypeNode') {
+                exports.push(`export 'types/${type.name}.dart';`);
+            }
+        });
+
+        // Export errors
+        if (program.errors.length > 0) {
+            exports.push(`export 'errors/${program.name}.dart';`);
+        }
     });
 
     exports.sort();

@@ -5,12 +5,8 @@ import { execSync } from 'child_process';
 import { RenderOptions } from '../utils';
 import { getRenderMapVisitor } from './getRenderMapVisitor';
 
-export function renderVisitor(
-    path: string,
-    options: RenderOptions = { deleteFolderBeforeRendering: true, formatCode: true, libraryName: 'lib' },
-) {
+export function renderVisitor(path: string, options: RenderOptions) {
     return rootNodeVisitor(root => {
-        // Delete existing generated folder.
         if (options.deleteFolderBeforeRendering ?? true) {
             deleteDirectory(path);
         }
@@ -18,10 +14,8 @@ export function renderVisitor(
         const renderMap = visit(root, getRenderMapVisitor(options));
         writeRenderMap(renderMap, path);
 
-        // Format the code using dart format if requested.
         if (options.formatCode ?? true) {
             try {
-                console.log('Formatting Dart code...');
                 execSync(`dart format "${path}"`, {
                     cwd: process.cwd(),
                     stdio: 'ignore',

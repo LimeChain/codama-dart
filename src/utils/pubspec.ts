@@ -1,3 +1,7 @@
+// Constants for Git-based dependencies
+const REPO_URL = 'https://github.com/vlady-kotsev/espresso-cash-public.git';
+const REPO_REF = '88f5db7cb883a8e81ed4932fee4933f1a97e5b79';
+
 export function generatePubspec(
     packageName: string,
     options: {
@@ -44,8 +48,8 @@ export function generatePubspec(
     sections.push(
         '  borsh:',
         '    git:',
-        '      url: https://github.com/vlady-kotsev/espresso-cash-public.git',
-        '      ref: 88f5db7cb883a8e81ed4932fee4933f1a97e5b79',
+        `      url: ${REPO_URL}`,
+        `      ref: ${REPO_REF}`,
         '      path: packages/borsh',
     );
 
@@ -53,8 +57,8 @@ export function generatePubspec(
     sections.push(
         '  borsh_annotation:',
         '    git:',
-        '      url: https://github.com/vlady-kotsev/espresso-cash-public.git',
-        '      ref: 88f5db7cb883a8e81ed4932fee4933f1a97e5b79',
+        `      url: ${REPO_URL}`,
+        `      ref: ${REPO_REF}`,
         '      path: packages/borsh_annotation',
     );
 
@@ -62,8 +66,8 @@ export function generatePubspec(
     sections.push(
         '  solana:',
         '    git:',
-        '      url: https://github.com/vlady-kotsev/espresso-cash-public.git',
-        '      ref: 88f5db7cb883a8e81ed4932fee4933f1a97e5b79',
+        `      url: ${REPO_URL}`,
+        `      ref: ${REPO_REF}`,
         '      path: packages/solana',
     );
 
@@ -85,9 +89,9 @@ export function generatePubspec(
         'dependency_overrides:',
         '  borsh_annotation:',
         '    git:',
-        '      url: https://github.com/vlady-kotsev/espresso-cash-public.git',
+        `      url: ${REPO_URL}`,
         '      path: packages/borsh_annotation',
-        '      ref: 88f5db7cb883a8e81ed4932fee4933f1a97e5b79',
+        `      ref: ${REPO_REF}`,
     );
 
     return sections.join('\n') + '\n';

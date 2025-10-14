@@ -1,17 +1,16 @@
-import { AccountNode, isNode, ProgramNode, resolveNestedTypeNode } from '@codama/nodes';
+import { AccountNode, isNode, resolveNestedTypeNode } from '@codama/nodes';
 import { findProgramNodeFromPath, getLastNodeFromPath, NodePath } from '@codama/visitors-core';
 
 import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, RenderScope } from '../utils';
 
 export function getAccountPageFragment(
-    scope: Pick<RenderScope, 'customAccountData' | 'linkables' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'nameApi'> & {
         accountPath: NodePath<AccountNode>;
         size: number | null;
     },
 ): Fragment {
     const node = getLastNodeFromPath(scope.accountPath);
     const className = scope.nameApi.accountType(node.name);
-    const size = scope.size;
     const programNode = findProgramNodeFromPath(scope.accountPath);
     if (!programNode) {
         throw new Error(`Could not find program node for account: ${node.name}`);
@@ -20,7 +19,7 @@ export function getAccountPageFragment(
     const dataTypeNode = resolveNestedTypeNode(node.data);
 
     if (dataTypeNode.kind === 'structTypeNode') {
-        return getStructAccountFragment(node, scope, className, size, programNode);
+        return getStructAccountFragment(node, scope, className);
     }
 
     const typeInfo = getTypeInfo(dataTypeNode, scope.nameApi);
@@ -44,17 +43,13 @@ class ${className} with _$${className} {
     return _$${className}FromBorsh(data);
   }
 
-  String _indent(String text, int level) {
-    final indent = '  ' * level;
-    return text.split('\\n').map((line) => line.isEmpty ? line : '$indent$line').join('\\n');
-  }
 
   @override
   String toString([int indent = 0]) {
     final buffer = StringBuffer();
     buffer.writeln('${className}(');
-    buffer.writeln(_indent('data: $data', indent + 1));
-    buffer.write(_indent(')', indent));
+    buffer.writeln('  data: $data');
+    buffer.write(')');
     return buffer.toString();
   }
 }`;
@@ -64,18 +59,15 @@ class ${className} with _$${className} {
 
 function getStructAccountFragment(
     node: AccountNode,
-    scope: Pick<RenderScope, 'customAccountData' | 'linkables' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'nameApi'> & {
         accountPath: NodePath<AccountNode>;
         size: number | null;
     },
     className: string,
-    _size: number | null,
-    _programNode: ProgramNode,
 ): Fragment {
     const dataTypeNode = resolveNestedTypeNode(node.data);
     const fields = isNode(dataTypeNode, 'structTypeNode') ? dataTypeNode.fields : [];
 
-    // Generate factory constructor parameters with Borsh annotations
     const factoryParams = fields
         .map(field => {
             const typeInfo = getTypeInfo(field.type, scope.nameApi);
@@ -105,10 +97,6 @@ ${factoryParams}
     return _$${className}FromBorsh(data);
   }
 
-  String _indent(String text, int level) {
-    final indent = '  ' * level;
-    return text.split('\\n').map((line) => line.isEmpty ? line : '$indent$line').join('\\n');
-  }
 
   @override
   String toString([int indent = 0]) {
@@ -117,10 +105,10 @@ ${factoryParams}
     ${fields
         .map(field => {
             const fieldName = scope.nameApi.accountField(field.name);
-            return `buffer.writeln(_indent('${fieldName}: $${fieldName}', indent + 1));`;
+            return `buffer.writeln('  ${fieldName}: $${fieldName}');`;
         })
         .join('\n    ')}
-    buffer.write(_indent(')', indent));
+    buffer.write(')');
     return buffer.toString();
   }
 }`;

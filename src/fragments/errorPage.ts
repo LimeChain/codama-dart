@@ -11,7 +11,6 @@ export function getErrorPageFragment(
     const className = nameApi.programErrorClass(programNode.name);
     const errors = [...programNode.errors].sort((a, b) => a.code - b.code);
 
-    // Generate error constants with individual docs
     const errorConstants = errors
         .map(error => {
             const constantName = nameApi.errorConstant(error.name);
@@ -21,7 +20,6 @@ export function getErrorPageFragment(
         })
         .join('\n');
 
-    // Generate error messages map
     const errorMessages = errors
         .map(error => {
             const constantName = nameApi.errorConstant(error.name);

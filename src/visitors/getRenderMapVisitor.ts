@@ -21,35 +21,20 @@ import {
     getProgramPageFragment,
     getStructTypeFragment,
 } from '../fragments';
-import {
-    createImportMap,
-    Fragment,
-    generatePubspec,
-    getImportFromFactory,
-    getNameApi,
-    getPageFragment,
-    GetRenderMapOptions,
-    parseCustomDataOptions,
-    RenderScope,
-} from '../utils';
+import { Fragment, generatePubspec, getNameApi, getPageFragment, GetRenderMapOptions, RenderScope } from '../utils';
 import { createInlinePdaFile } from '../utils/pda';
 
-export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
+export function getRenderMapVisitor(options: GetRenderMapOptions) {
     const linkables = new LinkableDictionary();
     const stack = new NodeStack();
 
     const byteSizeVisitor = getByteSizeVisitor(linkables, { stack });
     const libraryName = options.libraryName ?? 'lib';
-    const outputDirectory = options.outputDirectory ?? 'lib';
+    const outputDirectory = options.outputDirectory;
 
     // Create the complete render scope
     const renderScope: RenderScope = {
-        customAccountData: parseCustomDataOptions(options.customAccountData ?? [], 'AccountData'),
-        customInstructionData: parseCustomDataOptions(options.customInstructionData ?? [], 'InstructionData'),
-        getImportFrom: getImportFromFactory(),
-        imports: createImportMap(),
         libraryName,
-        linkables,
         nameApi: getNameApi(options.nameTransformers),
         outputDirectory,
     };
@@ -71,7 +56,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                 visitAccount(node) {
                     const size = visit(node, byteSizeVisitor);
                     return createRenderMap(
-                        `${outputDirectory}/accounts/${camelCase(node.name)}.dart`,
+                        `${libraryName}/accounts/${camelCase(node.name)}.dart`,
                         asPage(
                             getAccountPageFragment({
                                 ...renderScope,
@@ -85,7 +70,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                 visitDefinedType(node) {
                     if (node.type.kind === 'structTypeNode') {
                         return createRenderMap(
-                            `${outputDirectory}/types/${camelCase(node.name)}.dart`,
+                            `${libraryName}/types/${camelCase(node.name)}.dart`,
                             asPage(
                                 getStructTypeFragment({
                                     ...renderScope,
@@ -96,13 +81,12 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                             ),
                         );
                     }
-                    // TODO: Implement other defined type fragments
                     return createRenderMap();
                 },
 
                 visitInstruction(node) {
                     const instructionRenderMap = createRenderMap(
-                        `${outputDirectory}/instructions/${camelCase(node.name)}.dart`,
+                        `${libraryName}/instructions/${camelCase(node.name)}.dart`,
                         asPage(
                             getInstructionPageFragment({
                                 ...renderScope,
@@ -137,7 +121,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                             if (pdaFile) {
                                 pdaRenderMaps.set(
                                     pdaName,
-                                    createRenderMap(`${outputDirectory}/pdas/${pdaName}.dart`, pdaFile),
+                                    createRenderMap(`${libraryName}/pdas/${pdaName}.dart`, pdaFile),
                                 );
                             }
                         }
@@ -147,25 +131,13 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
                     return mergeRenderMaps([instructionRenderMap, ...pdaRenderMapArray]);
                 },
 
-                // visitPda(node) {
-                //     return createRenderMap(
-                //         `${outputDirectory}/pdas/${camelCase(node.name)}.dart`,
-                //         asPage(
-                //             getPdaPageFragment({
-                //                 ...renderScope,
-                //                 pdaPath: stack.getPath('pdaNode'),
-                //             }),
-                //         ),
-                //     );
-                // },
-
                 visitProgram(node, { self }) {
                     return mergeRenderMaps([
                         createRenderMap({
-                            [`${outputDirectory}/programs/${camelCase(node.name)}.dart`]: asPage(
+                            [`${libraryName}/programs/${camelCase(node.name)}.dart`]: asPage(
                                 getProgramPageFragment({ ...renderScope, programNode: node }),
                             ),
-                            [`${outputDirectory}/errors/${camelCase(node.name)}.dart`]:
+                            [`${libraryName}/errors/${camelCase(node.name)}.dart`]:
                                 node.errors.length > 0
                                     ? asPage(getErrorPageFragment({ ...renderScope, programNode: node }))
                                     : undefined,
@@ -185,7 +157,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions = {}) {
 
                     return mergeRenderMaps([
                         createRenderMap({
-                            [`${outputDirectory}/${libraryName}.dart`]: asPage(
+                            [`${libraryName}/${libraryName}.dart`]: asPage(
                                 getLibraryIndexFragment({
                                     ...renderScope,
                                     rootNode: node,

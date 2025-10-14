@@ -12,13 +12,11 @@ export function getInstructionDataFragment(
     const { instructionPath, nameApi } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
 
-    // Skip if no arguments
     if (instructionNode.arguments.length === 0) return;
 
     const instructionDataName = nameApi.instructionDataType(instructionNode.name);
     const structNode = structTypeNodeFromInstructionArgumentNodes(instructionNode.arguments);
 
-    // Generate factory constructor parameters with Borsh annotations (excluding discriminator)
     const factoryParams = structNode.fields
         .filter(field => field.name !== 'discriminator') // Exclude discriminator field
         .map(field => {
@@ -29,13 +27,11 @@ export function getInstructionDataFragment(
         })
         .join('\n');
 
-    // Generate validation for fixed-size fields (excluding discriminator to avoid duplication)
     const validations = structNode.fields
         .filter(field => field.name !== 'discriminator')
         .map(field => {
             const fieldName = nameApi.instructionField(field.name);
 
-            // Handle fixedSizeTypeNode
             if (field.type.kind === 'fixedSizeTypeNode') {
                 const size = field.type.size;
                 if (field.type.type.kind === 'bytesTypeNode') {
@@ -45,7 +41,6 @@ export function getInstructionDataFragment(
                 }
             }
 
-            // Handle arrayTypeNode with fixed count
             if (field.type.kind === 'arrayTypeNode' && field.type.count && field.type.count.kind === 'fixedCountNode') {
                 const size = field.type.count.value;
                 return `    if (${fieldName}.length != ${size}) throw ArgumentError('${fieldName} must have exactly ${size} elements, got \${${fieldName}.length}');`;
@@ -56,12 +51,10 @@ export function getInstructionDataFragment(
         .filter(v => v)
         .join('\n');
 
-    // Add validation for discriminator (always 8 bytes) + other validations
     const allValidations = validations
         ? `    if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got \${discriminator.length}');\n${validations}`
         : `    if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got \${discriminator.length}');`;
 
-    // Collect all imports
     const allImports = new Set(['package:borsh_annotation/borsh_annotation.dart', 'package:solana/solana.dart']);
     structNode.fields.forEach(field => {
         const typeInfo = getTypeInfo(field.type, nameApi);
@@ -106,10 +99,6 @@ ${structNode.fields
     return _$${instructionDataName}FromBorsh(data);
   }
 
-  String _indent(String text, int level) {
-    final indent = '  ' * level;
-    return text.split('\\n').map((line) => line.isEmpty ? line : '$indent$line').join('\\n');
-  }
 
   @override
   String toString([int indent = 0]) {
@@ -118,10 +107,10 @@ ${structNode.fields
     ${structNode.fields
         .map(field => {
             const fieldName = nameApi.instructionField(field.name);
-            return `buffer.writeln(_indent('${fieldName}: $${fieldName}', indent + 1));`;
+            return `buffer.writeln('  ${fieldName}: $${fieldName}');`;
         })
         .join('\n    ')}
-    buffer.write(_indent(')', indent));
+    buffer.write(')');
     return buffer.toString();
   }
 }`;

@@ -61,7 +61,7 @@ export function createInlinePdaFile(
         pageOptions?: { libraryName?: string },
     ) => TFragment,
 ): Fragment | undefined {
-    const functionName = `find${accountName.charAt(0).toUpperCase() + accountName.slice(1)}Pda`;
+    const functionName = `derive${accountName.charAt(0).toUpperCase() + accountName.slice(1)}Pda`;
     const seeds = generatePdaSeeds(pdaNode, pdaSeedValues, nameApi);
 
     const parameters: string[] = [];

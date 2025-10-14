@@ -6,11 +6,15 @@ import {
     OptionTypeNode,
     resolveNestedTypeNode,
     SizePrefixTypeNode,
-    StringTypeNode,
     TypeNode,
 } from '@codama/nodes';
 
 import { NameApi } from './nameTransformers';
+
+// Constants for hardcoded values
+const DEFAULT_PUBLIC_KEY = '11111111111111111111111111111111';
+const TYPES_IMPORT_PREFIX = '../types/';
+const SOLANA_PUBLIC_KEY_SIZE = 32;
 
 export interface TypeInfo {
     dartType: string;
@@ -19,29 +23,20 @@ export interface TypeInfo {
     serializationSize?: number;
 }
 
-// We need RenderScope for name transformers when handling defined type links
-export type TypeInfoScope = {
-    nameApi: {
-        definedType: (name: string) => string;
-    };
-};
-
 export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi): TypeInfo {
     switch (typeNode.kind) {
         case 'numberTypeNode':
-            return getNumberTypeInfo(typeNode as NumberTypeNode);
+            return getNumberTypeInfo(typeNode);
         case 'booleanTypeNode':
             return getBooleanTypeInfo();
         case 'stringTypeNode':
-            return getStringTypeInfo(typeNode as StringTypeNode);
+            return getStringTypeInfo();
         case 'bytesTypeNode':
             return getBytesTypeInfo();
         case 'arrayTypeNode':
-            return getArrayTypeInfo(typeNode as ArrayTypeNode, nameApi);
+            return getArrayTypeInfo(typeNode, nameApi);
         case 'optionTypeNode':
-            return getOptionTypeInfo(typeNode as OptionTypeNode, nameApi);
-        // case 'tupleTypeNode':
-        //     return getTupleTypeInfo(typeNode as TupleTypeNode);
+            return getOptionTypeInfo(typeNode, nameApi);
         case 'setTypeNode':
             return getSetTypeInfo();
         case 'mapTypeNode':
@@ -50,19 +45,16 @@ export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi): TypeInfo {
             return getDateTimeTypeInfo();
         case 'publicKeyTypeNode':
             return getPublicKeyTypeInfo();
-        // case 'structTypeNode':
-        //     return getStructTypeInfo(typeNode as StructTypeNode);
         case 'fixedSizeTypeNode':
-            return getFixedSizeTypeInfo(typeNode as FixedSizeTypeNode, nameApi);
+            return getFixedSizeTypeInfo(typeNode, nameApi);
         case 'solAmountTypeNode':
             return getAmountTypeInfo();
         case 'definedTypeLinkNode':
-            return getDefinedTypeLinkTypeInfo(typeNode as DefinedTypeLinkNode, nameApi.definedType(typeNode.name));
+            return getDefinedTypeLinkTypeInfo(typeNode, nameApi.definedType(typeNode.name));
         case 'sizePrefixTypeNode':
-            return getSizePrefixTypeInfo(typeNode as SizePrefixTypeNode);
+            return getSizePrefixTypeInfo(typeNode);
         default:
             // For unsupported types, return a generic object type
-            console.log(`DEBUG: Unsupported type node kind: ${typeNode.kind}`, typeNode);
             return {
                 dartType: 'Object',
                 defaultValue: 'Object()',
@@ -74,99 +66,34 @@ export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi): TypeInfo {
 function getNumberTypeInfo(node: NumberTypeNode): TypeInfo {
     const { format } = node;
 
-    // Map Codama number formats to Dart types
-    switch (format) {
-        case 'u8':
-            return {
-                dartType: 'int',
-                defaultValue: '0',
-                imports: [],
-                serializationSize: 1,
-            };
-        case 'u16':
-            return {
-                dartType: 'int',
-                defaultValue: '0',
-                imports: [],
-                serializationSize: 2,
-            };
-        case 'u32':
-            return {
-                dartType: 'int',
-                defaultValue: '0',
-                imports: [],
-                serializationSize: 4,
-            };
-        case 'u64':
-            return {
-                dartType: 'BigInt',
-                defaultValue: 'BigInt.zero',
-                imports: [],
-                serializationSize: 8,
-            };
-        case 'u128':
-            return {
-                dartType: 'BigInt',
-                defaultValue: 'BigInt.zero',
-                imports: [],
-                serializationSize: 16,
-            };
-        case 'i8':
-            return {
-                dartType: 'int',
-                defaultValue: '0',
-                imports: [],
-                serializationSize: 1,
-            };
-        case 'i16':
-            return {
-                dartType: 'int',
-                defaultValue: '0',
-                imports: [],
-                serializationSize: 2,
-            };
-        case 'i32':
-            return {
-                dartType: 'int',
-                defaultValue: '0',
-                imports: [],
-                serializationSize: 4,
-            };
-        case 'i64':
-            return {
-                dartType: 'BigInt',
-                defaultValue: 'BigInt.zero',
-                imports: [],
-                serializationSize: 8,
-            };
-        case 'i128':
-            return {
-                dartType: 'BigInt',
-                defaultValue: 'BigInt.zero',
-                imports: [],
-                serializationSize: 16,
-            };
-        case 'f32':
-            return {
-                dartType: 'double',
-                defaultValue: '0.0',
-                imports: [],
-                serializationSize: 4,
-            };
-        case 'f64':
-            return {
-                dartType: 'double',
-                defaultValue: '0.0',
-                imports: [],
-                serializationSize: 8,
-            };
-        default:
-            return {
-                dartType: 'num',
-                defaultValue: '0',
-                imports: [],
-            };
+    const numberTypeMap: Record<string, { dartType: string; defaultValue: string; serializationSize: number }> = {
+        f32: { dartType: 'double', defaultValue: '0.0', serializationSize: 4 },
+        f64: { dartType: 'double', defaultValue: '0.0', serializationSize: 8 },
+        i128: { dartType: 'BigInt', defaultValue: 'BigInt.zero', serializationSize: 16 },
+        i16: { dartType: 'int', defaultValue: '0', serializationSize: 2 },
+        i32: { dartType: 'int', defaultValue: '0', serializationSize: 4 },
+        i64: { dartType: 'BigInt', defaultValue: 'BigInt.zero', serializationSize: 8 },
+        i8: { dartType: 'int', defaultValue: '0', serializationSize: 1 },
+        u128: { dartType: 'BigInt', defaultValue: 'BigInt.zero', serializationSize: 16 },
+        u16: { dartType: 'int', defaultValue: '0', serializationSize: 2 },
+        u32: { dartType: 'int', defaultValue: '0', serializationSize: 4 },
+        u64: { dartType: 'BigInt', defaultValue: 'BigInt.zero', serializationSize: 8 },
+        u8: { dartType: 'int', defaultValue: '0', serializationSize: 1 },
+    };
+
+    const typeInfo = numberTypeMap[format];
+    if (typeInfo) {
+        return {
+            ...typeInfo,
+            imports: [],
+        };
     }
+
+    return {
+        dartType: 'num',
+        defaultValue: '0',
+        imports: [],
+    };
 }
 
 function getBooleanTypeInfo(): TypeInfo {
@@ -178,7 +105,7 @@ function getBooleanTypeInfo(): TypeInfo {
     };
 }
 
-function getStringTypeInfo(_node: StringTypeNode): TypeInfo {
+function getStringTypeInfo(): TypeInfo {
     return {
         dartType: 'String',
         defaultValue: "''",
@@ -234,16 +161,6 @@ function getOptionTypeInfo(node: OptionTypeNode, nameApi: NameApi): TypeInfo {
     };
 }
 
-// function getTupleTypeInfo(_node: TupleTypeNode): TypeInfo {
-//     // Dart doesn't have built-in tuples, we'll use List
-
-//     return {
-//         dartType: 'List<Object>',
-//         defaultValue: 'const []',
-//         imports: [],
-//     };
-// }
-
 function getSetTypeInfo(): TypeInfo {
     return {
         dartType: 'Set<Object>',
@@ -272,9 +189,9 @@ function getDateTimeTypeInfo(): TypeInfo {
 function getPublicKeyTypeInfo(): TypeInfo {
     return {
         dartType: 'Ed25519HDPublicKey',
-        defaultValue: 'Ed25519HDPublicKey.fromBase58("11111111111111111111111111111111")',
+        defaultValue: `Ed25519HDPublicKey.fromBase58("${DEFAULT_PUBLIC_KEY}")`,
         imports: ['package:solana/solana.dart'],
-        serializationSize: 32, // Solana public keys are 32 bytes
+        serializationSize: SOLANA_PUBLIC_KEY_SIZE,
     };
 }
 
@@ -303,18 +220,6 @@ function getFixedSizeTypeInfo(node: FixedSizeTypeNode, nameApi: NameApi): TypeIn
     };
 }
 
-// function getStructTypeInfo(node: StructTypeNode): TypeInfo {
-//     // For struct types, we need to generate a custom class
-//     // This is a placeholder - the actual class generation happens in fragments
-//     // We return a generic name that will be replaced with the actual class name
-//     return {
-//         dartType: 'Object', // Will be replaced with actual struct class name
-//         defaultValue: 'Object()', // Will be replaced with actual constructor
-//         imports: [],
-//         // Size depends on the fields - calculated elsewhere
-//     };
-// }
-
 function getAmountTypeInfo(): TypeInfo {
     return {
         dartType: 'BigInt',
@@ -324,47 +229,6 @@ function getAmountTypeInfo(): TypeInfo {
     };
 }
 
-export function generateDartSerialization(typeInfo: TypeInfo, fieldName: string): string {
-    const { dartType, serializationSize } = typeInfo;
-
-    if (dartType === 'bool') {
-        return `// TODO: Handle BigInt serialization for ${fieldName} (${serializationSize} bytes)`;
-    }
-
-    if (dartType === 'int' && serializationSize) {
-        return `// TODO: Handle BigInt serialization for ${fieldName} (${serializationSize} bytes)`;
-    }
-
-    if (dartType === 'double' && serializationSize) {
-        return `// TODO: Handle ${serializationSize}-byte float serialization for ${fieldName}`;
-    }
-
-    if (dartType === 'BigInt' && serializationSize) {
-        return `// TODO: Handle BigInt serialization for ${fieldName} (${serializationSize} bytes)`;
-    }
-
-    if (dartType === 'String' && serializationSize === 32) {
-        return `// TODO: Handle PublicKey serialization for ${fieldName} (32 bytes)`;
-    }
-
-    if (dartType === 'String') {
-        return `// TODO: Handle String serialization for ${fieldName}`;
-    }
-
-    if (dartType === 'Uint8List') {
-        return `// TODO: Handle Uint8List serialization for ${fieldName}`;
-    }
-
-    if (dartType === 'List<int>' && serializationSize) {
-        return `// TODO: Handle fixed-size byte array serialization for ${fieldName} (${serializationSize} bytes)`;
-    }
-
-    if (dartType.startsWith('List<') || dartType.startsWith('Set<') || dartType.startsWith('Map<')) {
-        return `// TODO: Handle collection serialization for ${fieldName}`;
-    }
-
-    return `// TODO: Handle serialization for ${fieldName} of type ${dartType}`;
-}
 
 export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string {
     switch (typeNode.kind) {
@@ -452,68 +316,10 @@ export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string
     }
 }
 
-export function generateDartDeserialization(typeInfo: TypeInfo, fieldName: string): string {
-    const { dartType, serializationSize } = typeInfo;
-
-    if (dartType === 'bool') {
-        return `${fieldName} = data.getUint8(offset) != 0; offset += 1;`;
-    }
-
-    if (dartType === 'int' && serializationSize) {
-        switch (serializationSize) {
-            case 1:
-                return `${fieldName} = data.getUint8(offset); offset += 1;`;
-            case 2:
-                return `${fieldName} = data.getUint16(offset, Endian.little); offset += 2;`;
-            case 4:
-                return `${fieldName} = data.getUint32(offset, Endian.little); offset += 4;`;
-            default:
-                return `// TODO: Handle ${serializationSize}-byte integer deserialization for ${fieldName}`;
-        }
-    }
-
-    if (dartType === 'double' && serializationSize) {
-        switch (serializationSize) {
-            case 4:
-                return `${fieldName} = data.getFloat32(offset, Endian.little); offset += 4;`;
-            case 8:
-                return `${fieldName} = data.getFloat64(offset, Endian.little); offset += 8;`;
-            default:
-                return `// TODO: Handle ${serializationSize}-byte float deserialization for ${fieldName}`;
-        }
-    }
-
-    if (dartType === 'BigInt' && serializationSize) {
-        return `// TODO: Handle BigInt deserialization for ${fieldName} (${serializationSize} bytes)`;
-    }
-
-    if (dartType === 'String' && serializationSize === 32) {
-        return `// TODO: Handle PublicKey deserialization for ${fieldName} (32 bytes)`;
-    }
-
-    if (dartType === 'String') {
-        return `// TODO: Handle String deserialization for ${fieldName}`;
-    }
-
-    if (dartType === 'Uint8List') {
-        return `// TODO: Handle Uint8List deserialization for ${fieldName}`;
-    }
-
-    if (dartType === 'List<int>' && serializationSize) {
-        return `// TODO: Handle fixed-size byte array deserialization for ${fieldName} (${serializationSize} bytes)`;
-    }
-
-    if (dartType.startsWith('List<')) {
-        return `// TODO: Handle List deserialization for ${fieldName}`;
-    }
-
-    return `// TODO: Handle deserialization for ${fieldName} of type ${dartType}`;
-}
 
 function getDefinedTypeLinkTypeInfo(node: DefinedTypeLinkNode, className: string): TypeInfo {
     // Generate import path for the custom type
-    // Assuming types are in '../types/' directory relative to accounts
-    const importPath = `../types/${node.name}.dart`;
+    const importPath = `${TYPES_IMPORT_PREFIX}${node.name}.dart`;
 
     return {
         dartType: className,

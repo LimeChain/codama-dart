@@ -82,10 +82,6 @@ ${fields
     return _$${className}FromBorsh(data);
   }
 
-  String _indent(String text, int level) {
-    final indent = '  ' * level;
-    return text.split('\\n').map((line) => line.isEmpty ? line : '$indent$line').join('\\n');
-  }
 
   @override
   String toString([int indent = 0]) {
@@ -94,10 +90,10 @@ ${fields
     ${fields
         .map(field => {
             const fieldName = nameApi.accountField(field.name);
-            return `buffer.writeln(_indent('${fieldName}: $${fieldName}', indent + 1));`;
+            return `buffer.writeln('  ${fieldName}: $${fieldName}');`;
         })
         .join('\n    ')}
-    buffer.write(_indent(')', indent));
+    buffer.write(')');
     return buffer.toString();
   }
 }`;
