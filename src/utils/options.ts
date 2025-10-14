@@ -16,7 +16,6 @@ export type GetRenderMapOptions = {
     nameTransformers?: Partial<import('./nameTransformers').NameTransformers>;
     outputDirectory?: string;
     pubspecName?: string;
-    renderParentInstructions?: boolean;
 };
 
 export type CustomDataOptions = {
@@ -30,29 +29,23 @@ export type RenderScope = {
     // Custom data handling
     customAccountData: ParsedCustomDataOptions;
     customInstructionData: ParsedCustomDataOptions;
-    
+
     getImportFrom: GetImportFromFunction;
-    
+
     // Import management
     imports: ImportMap;
     // Core configuration
     libraryName: string;
-    
+
     // Cross-reference systems
     linkables: LinkableDictionary;
     // Naming and transformations
     nameApi: NameApi;
-    
+
     outputDirectory: string;
-    
-    // Rendering options
-    renderParentInstructions: boolean;
 };
 
-export function parseCustomDataOptions(
-    options: CustomDataOptions[], 
-    _prefix: string
-): ParsedCustomDataOptions {
+export function parseCustomDataOptions(options: CustomDataOptions[]): ParsedCustomDataOptions {
     const map = new Map<CamelCaseString, CustomDataOptions>();
     options.forEach(option => {
         map.set(option.name, option);

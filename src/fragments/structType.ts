@@ -1,4 +1,4 @@
-import { StructTypeNode } from '@codama/nodes';
+import { camelCase, StructTypeNode } from '@codama/nodes';
 
 import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, RenderScope } from '../utils';
 
@@ -10,26 +10,13 @@ export function getStructTypeFragment(
     },
 ): Fragment {
     const { name, node, nameApi } = scope;
-    const className = nameApi.definedType(name);
+    const className = nameApi.definedType(camelCase(name));
     const fields = node.fields || [];
 
-    // Generate field declarations
-    const fieldDeclarations = fields.map(field => {
-        const typeInfo = getTypeInfo(field.type, scope.nameApi);
-        return `  ${typeInfo.dartType} ${nameApi.accountField(field.name)};`;
-    }).join('\n');
-
-    // Generate constructor parameters
-    const constructorParams = fields.map(field => {
-        return `required this.${nameApi.accountField(field.name)}`;
-    }).join(', ');
-
-    // Generate validation for fixed-size fields
     const validations = fields
         .map(field => {
             const fieldName = nameApi.accountField(field.name);
-            
-            // Handle fixedSizeTypeNode
+
             if (field.type.kind === 'fixedSizeTypeNode') {
                 const size = field.type.size;
                 if (field.type.type.kind === 'bytesTypeNode') {
@@ -38,13 +25,12 @@ export function getStructTypeFragment(
                     return `    if (${fieldName}.length != ${size}) throw ArgumentError('${fieldName} must have exactly ${size} elements, got \${${fieldName}.length}');`;
                 }
             }
-            
-            // Handle arrayTypeNode with fixed count
+
             if (field.type.kind === 'arrayTypeNode' && field.type.count && field.type.count.kind === 'fixedCountNode') {
                 const size = field.type.count.value;
                 return `    if (${fieldName}.length != ${size}) throw ArgumentError('${fieldName} must have exactly ${size} elements, got \${${fieldName}.length}');`;
             }
-            
+
             return '';
         })
         .filter(v => v)
@@ -58,12 +44,14 @@ export function getStructTypeFragment(
     });
 
     const hasValidations = validations.length > 0;
-    const factoryParams = fields.map(field => {
-        const typeInfo = getTypeInfo(field.type, scope.nameApi);
-        const borshAnnotation = getBorshAnnotation(field.type, scope.nameApi);
-        const fieldName = nameApi.accountField(field.name);
-        return `    ${borshAnnotation} required ${typeInfo.dartType} ${fieldName},`;
-    }).join('\n');
+    const factoryParams = fields
+        .map(field => {
+            const typeInfo = getTypeInfo(field.type, scope.nameApi);
+            const borshAnnotation = getBorshAnnotation(field.type, scope.nameApi);
+            const fieldName = nameApi.accountField(field.name);
+            return `    ${borshAnnotation} required ${typeInfo.dartType} ${fieldName},`;
+        })
+        .join('\n');
 
     const content = `part '${name}.g.dart';
 
@@ -71,16 +59,22 @@ export function getStructTypeFragment(
 class ${className} with _$${className} {
   factory ${className}({
 ${factoryParams}
-  })${hasValidations ? ` {
+  })${
+      hasValidations
+          ? ` {
     // Validate fixed-size fields
 ${validations}
     return _${className}(
-${fields.map(field => {
+${fields
+    .map(field => {
         const fieldName = nameApi.accountField(field.name);
         return `      ${fieldName}: ${fieldName},`;
-    }).join('\n')}
+    })
+    .join('\n')}
     );
-  }` : ` = _${className};`}
+  }`
+          : ` = _${className};`
+  }
 
   const ${className}._();
 
@@ -97,10 +91,12 @@ ${fields.map(field => {
   String toString([int indent = 0]) {
     final buffer = StringBuffer();
     buffer.writeln('${className}(');
-    ${fields.map(field => {
-        const fieldName = nameApi.accountField(field.name);
-        return `buffer.writeln(_indent('${fieldName}: $${fieldName}', indent + 1));`;
-    }).join('\n    ')}
+    ${fields
+        .map(field => {
+            const fieldName = nameApi.accountField(field.name);
+            return `buffer.writeln(_indent('${fieldName}: $${fieldName}', indent + 1));`;
+        })
+        .join('\n    ')}
     buffer.write(_indent(')', indent));
     return buffer.toString();
   }

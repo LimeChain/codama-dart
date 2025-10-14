@@ -26,14 +26,14 @@ export function mergeImportMaps(maps: ImportMap[]): ImportMap {
 
 export function importMapToString(importMap: ImportMap): string {
     if (importMap.size === 0) return '';
-    
+
     const imports: string[] = [];
-    
+
     // Sort import groups: dart:, package:, relative
     const dartImports: [string, Set<string>][] = [];
     const packageImports: [string, Set<string>][] = [];
     const relativeImports: [string, Set<string>][] = [];
-    
+
     importMap.forEach((importSet, modulePath) => {
         const entry: [string, Set<string>] = [modulePath, importSet];
         if (modulePath.startsWith('dart:')) {
@@ -44,12 +44,12 @@ export function importMapToString(importMap: ImportMap): string {
             relativeImports.push(entry);
         }
     });
-    
+
     // Sort within each group
     dartImports.sort(([a], [b]) => a.localeCompare(b));
     packageImports.sort(([a], [b]) => a.localeCompare(b));
     relativeImports.sort(([a], [b]) => a.localeCompare(b));
-    
+
     // Generate import statements
     [...dartImports, ...packageImports, ...relativeImports].forEach(([modulePath, importSet]) => {
         if (importSet.size === 0) {
@@ -63,14 +63,11 @@ export function importMapToString(importMap: ImportMap): string {
             }
         }
     });
-    
+
     return imports.join('\n');
 }
 
-export type GetImportFromFunction = (
-    importedName: string,
-    currentFilePath: string
-) => string;
+export type GetImportFromFunction = (importedName: string, currentFilePath: string) => string;
 
 export function getImportFromFactory(): GetImportFromFunction {
     return (importedName: string, currentFilePath: string): string => {
@@ -79,7 +76,7 @@ export function getImportFromFactory(): GetImportFromFunction {
         const parts = currentFilePath.split('/');
         const depth = parts.length - 1;
         const prefix = depth > 1 ? '../'.repeat(depth - 1) : './';
-        
+
         // Determine the import path based on naming conventions
         if (importedName.endsWith('Account')) {
             return `${prefix}accounts/${camelCase(importedName.replace('Account', ''))}.dart`;
@@ -93,7 +90,7 @@ export function getImportFromFactory(): GetImportFromFunction {
         if (importedName.endsWith('Error')) {
             return `${prefix}errors/${camelCase(importedName.replace('Error', ''))}.dart`;
         }
-        
+
         // Default to types directory
         return `${prefix}types/${camelCase(importedName)}.dart`;
     };

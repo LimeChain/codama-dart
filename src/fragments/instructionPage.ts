@@ -1,5 +1,5 @@
 import { InstructionNode } from '@codama/nodes';
-import { findProgramNodeFromPath, getLastNodeFromPath, NodePath } from '@codama/visitors-core';
+import { findProgramNodeFromPath, NodePath } from '@codama/visitors-core';
 
 import { createFragment, Fragment, RenderScope } from '../utils';
 import { getInstructionDataFragment } from './instructionData';
@@ -11,13 +11,12 @@ export function getInstructionPageFragment(
         size: number | null;
     },
 ): Fragment {
-    const node = getLastNodeFromPath(scope.instructionPath);
     if (!findProgramNodeFromPath(scope.instructionPath)) {
         throw new Error('Instruction must be visited inside a program.');
     }
 
     const fragments: Fragment[] = [];
-    
+
     // Generate instruction data type (arguments)
     const dataFragment = getInstructionDataFragment(scope);
     if (dataFragment) {

@@ -1,107 +1,101 @@
-import { camelCase, isNode, PdaNode, TypeNode } from '@codama/nodes';
+import { isNode, PdaNode, PdaSeedValueNode, StandaloneValueNode } from '@codama/nodes';
 
-import { Fragment, fragment, RenderScope } from './fragment';
+import { Fragment } from './fragment';
+import { RenderScope } from './options';
 
-export interface PdaSeedInfo {
-    dartType?: string;
-    encoding: string;
-    name?: string;
-    type: 'constant' | 'programId' | 'variable';
-    value?: string;
-}
-
-export function parsePdaSeeds(pdaNode: PdaNode): PdaSeedInfo[] {
+/**
+ * Generates Dart code for PDA seeds based on a PDA node and its seed values
+ */
+export function generatePdaSeeds(
+    pdaNode: PdaNode,
+    pdaSeedValues: PdaSeedValueNode[] | undefined,
+    nameApi: RenderScope['nameApi'],
+): string[] {
     return pdaNode.seeds.map(seed => {
         if (isNode(seed, 'constantPdaSeedNode')) {
+            if (isNode(seed.value, 'stringValueNode')) {
+                return `utf8.encode("${seed.value.string}")`;
+            }
             if (isNode(seed.value, 'programIdValueNode')) {
-                return {
-                    encoding: 'programId.bytes',
-                    type: 'programId',
-                };
+                return `programId.bytes`;
+            }
+            if (isNode(seed.value, 'bytesValueNode')) {
+                // Convert byte array to Uint8List
+                const byteArray = Array.from(Buffer.from(seed.value.data, 'hex'));
+                return `Uint8List.fromList([${byteArray.join(', ')}])`;
+            }
+            if (seed.value.kind === 'arrayValueNode' && seed.value.items) {
+                // Handle array of bytes like [108, 101, 32, 115, 101, 101, 100]
+                const bytes = seed.value.items.map((item: StandaloneValueNode) =>
+                    isNode(item, 'numberValueNode') ? item.number : 0,
+                );
+                return `Uint8List.fromList([${bytes.join(', ')}])`;
+            }
+        }
+        if (isNode(seed, 'variablePdaSeedNode')) {
+            const valueSeed = pdaSeedValues?.find((s: PdaSeedValueNode) => s.name === seed.name)?.value;
+
+            if (valueSeed && (isNode(valueSeed, 'accountValueNode') || isNode(valueSeed, 'argumentValueNode'))) {
+                const paramName = valueSeed.name;
+                return `${paramName}.toByteArray()`;
             }
 
-            // Handle different constant types
-            const value = isNode(seed.value, 'stringValueNode')
-                ? `"${seed.value.string}"`
-                : isNode(seed.value, 'numberValueNode')
-                  ? seed.value.number.toString()
-                  : 'null';
-
-            return {
-                encoding: getEncodingForType(seed.type, value),
-                type: 'constant',
-                value,
-            };
+            const seedName = nameApi.instructionField(seed.name);
+            return `${seedName}.toByteArray()`;
         }
+        return 'utf8.encode("fallback")';
+    });
+}
 
+/**
+ * Creates a PDA derivation function fragment for a given account
+ */
+export function createInlinePdaFile(
+    accountName: string,
+    pdaNode: PdaNode,
+    pdaSeedValues: PdaSeedValueNode[] | undefined,
+    nameApi: RenderScope['nameApi'],
+    programPublicKey: string | undefined,
+    asPage: <TFragment extends Fragment | undefined>(
+        fragment: TFragment,
+        pageOptions?: { libraryName?: string },
+    ) => TFragment,
+): Fragment | undefined {
+    const functionName = `find${accountName.charAt(0).toUpperCase() + accountName.slice(1)}Pda`;
+    const seeds = generatePdaSeeds(pdaNode, pdaSeedValues, nameApi);
+
+    const parameters: string[] = [];
+
+    pdaNode.seeds.forEach(seed => {
         if (isNode(seed, 'variablePdaSeedNode')) {
-            const name = camelCase(seed.name);
-            const dartType = getDartTypeForSeed(seed.type);
-
-            return {
-                dartType,
-                encoding: getEncodingForType(seed.type, name),
-                name,
-                type: 'variable',
-            };
-        }
-
-        throw new Error(`Unsupported seed type: ${(seed as TypeNode).kind}`);
-    });
-}
-
-function getDartTypeForSeed(typeNode: TypeNode): string {
-    // This would need to integrate with the existing type system
-    // For now, return basic types
-    if (typeNode.kind === 'stringTypeNode') return 'String';
-    if (typeNode.kind === 'publicKeyTypeNode') return 'Ed25519HDPublicKey';
-    if (typeNode.kind === 'numberTypeNode') return 'int';
-    return 'dynamic';
-}
-
-function getEncodingForType(typeNode: TypeNode, value: string): string {
-    if (typeNode.kind === 'stringTypeNode') {
-        return `utf8.encode(${value})`;
-    }
-    if (typeNode.kind === 'publicKeyTypeNode') {
-        return `${value}.bytes`;
-    }
-    if (typeNode.kind === 'numberTypeNode') {
-        // Handle different number formats
-        return `Uint8List.fromList([${value}])`;
-    }
-    return value;
-}
-
-export function generatePdaFunction(pdaNode: PdaNode, scope: Pick<RenderScope, 'nameApi'>): Fragment {
-    const seeds = parsePdaSeeds(pdaNode);
-    const functionName = scope.nameApi.pdaFindFunction(pdaNode.name);
-    const variableSeeds = seeds.filter(s => s.type === 'variable');
-
-    const hasVariableSeeds = variableSeeds.length > 0;
-    const parameters = hasVariableSeeds ? variableSeeds.map(s => `required ${s.dartType} ${s.name}`).join(', ') : '';
-
-    const seedExpressions = seeds.map(seed => {
-        switch (seed.type) {
-            case 'constant':
-                return seed.encoding;
-            case 'variable':
-                return seed.encoding;
-            case 'programId':
-                return 'programId.bytes';
-            default:
-                throw new Error(`Unknown seed type: ${(seed).type}`);
+            const valueSeed = pdaSeedValues?.find((s: PdaSeedValueNode) => s.name === seed.name)?.value;
+            if (valueSeed && (isNode(valueSeed, 'accountValueNode') || isNode(valueSeed, 'argumentValueNode'))) {
+                // This is either an account or argument parameter
+                const paramName = valueSeed.name;
+                parameters.push(`Ed25519HDPublicKey ${paramName}`);
+            }
         }
     });
 
-    // const programAddress = pdaNode.programId || 'programId';
+    const parameterList = parameters.length > 0 ? parameters.join(', ') : '';
+    const programIdValue = programPublicKey
+        ? `Ed25519HDPublicKey.fromBase58('${programPublicKey}')`
+        : 'PROGRAM_ID_HERE';
 
-    return fragment`
-/// Finds the PDA address for ${pdaNode.name}
-static Future<Ed25519HDPublicKey> ${functionName}(${parameters}${hasVariableSeeds ? ', ' : ''}Ed25519HDPublicKey programId) async {
+    const content = `/// Returns the PDA address for ${accountName}
+Future<Ed25519HDPublicKey> ${functionName}(${parameterList}) async {
   return Ed25519HDPublicKey.findProgramAddress(
-    seeds: [${seedExpressions.join(', ')}],
-    programId: programId,
+    seeds: [${seeds.join(', ')}],
+    programId: ${programIdValue},
   );
 }`;
+
+    const imports = new Set(['package:solana/solana.dart', 'dart:typed_data']);
+
+    const fragment: Fragment = {
+        content,
+        imports,
+    };
+
+    return asPage(fragment);
 }

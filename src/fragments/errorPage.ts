@@ -12,19 +12,23 @@ export function getErrorPageFragment(
     const errors = [...programNode.errors].sort((a, b) => a.code - b.code);
 
     // Generate error constants with individual docs
-    const errorConstants = errors.map(error => {
-        const constantName = nameApi.errorConstant(error.name);
-        const docs = error.docs && error.docs.length > 0 ? error.docs.join(' ') : '';
-        const docComment = docs ? `  /// ${docs}\n` : '';
-        return `${docComment}  static const int ${constantName} = ${error.code};`;
-    }).join('\n');
+    const errorConstants = errors
+        .map(error => {
+            const constantName = nameApi.errorConstant(error.name);
+            const docs = error.docs && error.docs.length > 0 ? error.docs.join(' ') : '';
+            const docComment = docs ? `  /// ${docs}\n` : '';
+            return `${docComment}  static const int ${constantName} = ${error.code};`;
+        })
+        .join('\n');
 
     // Generate error messages map
-    const errorMessages = errors.map(error => {
-        const constantName = nameApi.errorConstant(error.name);
-        const escapedMessage = error.message.replace(/'/g, "\\'");
-        return `    ${constantName}: '${escapedMessage}',`;
-    }).join('\n');
+    const errorMessages = errors
+        .map(error => {
+            const constantName = nameApi.errorConstant(error.name);
+            const escapedMessage = error.message.replace(/'/g, "\\'");
+            return `    ${constantName}: '${escapedMessage}',`;
+        })
+        .join('\n');
 
     const content = `/// Program errors for ${programNode.name}
 class ${className} {

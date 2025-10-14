@@ -12,6 +12,18 @@ export function createFragment(content: string, imports: string[] = []): Fragmen
         libraryName: undefined,
     };
 }
+
+export function isFragment(value: unknown): value is Fragment {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        'content' in value &&
+        'imports' in value &&
+        typeof (value as Record<string, unknown>).content === 'string' &&
+        (value as Record<string, unknown>).imports instanceof Set
+    );
+}
+
 export function fragment(template: TemplateStringsArray, ...items: unknown[]): Fragment {
     return createFragmentTemplate(template, items, isFragment, mergeFragments);
 }

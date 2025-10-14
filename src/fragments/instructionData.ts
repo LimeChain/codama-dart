@@ -34,7 +34,7 @@ export function getInstructionDataFragment(
         .filter(field => field.name !== 'discriminator')
         .map(field => {
             const fieldName = nameApi.instructionField(field.name);
-            
+
             // Handle fixedSizeTypeNode
             if (field.type.kind === 'fixedSizeTypeNode') {
                 const size = field.type.size;
@@ -44,20 +44,20 @@ export function getInstructionDataFragment(
                     return `    if (${fieldName}.length != ${size}) throw ArgumentError('${fieldName} must have exactly ${size} elements, got \${${fieldName}.length}');`;
                 }
             }
-            
+
             // Handle arrayTypeNode with fixed count
             if (field.type.kind === 'arrayTypeNode' && field.type.count && field.type.count.kind === 'fixedCountNode') {
                 const size = field.type.count.value;
                 return `    if (${fieldName}.length != ${size}) throw ArgumentError('${fieldName} must have exactly ${size} elements, got \${${fieldName}.length}');`;
             }
-            
+
             return '';
         })
         .filter(v => v)
         .join('\n');
 
     // Add validation for discriminator (always 8 bytes) + other validations
-    const allValidations = validations 
+    const allValidations = validations
         ? `    if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got \${discriminator.length}');\n${validations}`
         : `    if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got \${discriminator.length}');`;
 
@@ -115,10 +115,12 @@ ${structNode.fields
   String toString([int indent = 0]) {
     final buffer = StringBuffer();
     buffer.writeln('${instructionDataName}(');
-    ${structNode.fields.map(field => {
-        const fieldName = nameApi.instructionField(field.name);
-        return `buffer.writeln(_indent('${fieldName}: $${fieldName}', indent + 1));`;
-    }).join('\n    ')}
+    ${structNode.fields
+        .map(field => {
+            const fieldName = nameApi.instructionField(field.name);
+            return `buffer.writeln(_indent('${fieldName}: $${fieldName}', indent + 1));`;
+        })
+        .join('\n    ')}
     buffer.write(_indent(')', indent));
     return buffer.toString();
   }

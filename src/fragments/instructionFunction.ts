@@ -1,8 +1,9 @@
-import { InstructionNode, isNode, PdaSeedValueNode, StandaloneValueNode } from '@codama/nodes';
+import { InstructionNode, isNode, PdaSeedValueNode } from '@codama/nodes';
 import { findProgramNodeFromPath, getLastNodeFromPath, NodePath } from '@codama/visitors-core';
 
 import { createFragment, Fragment, RenderScope } from '../utils';
 import { getBuiltinProgramAddress } from '../utils/builtinPrograms';
+import { generatePdaSeeds } from '../utils/pda';
 
 export function getInstructionFunctionFragment(
     scope: Pick<RenderScope, 'nameApi'> & {
@@ -30,7 +31,7 @@ export function getInstructionFunctionFragment(
 
             // Check if this account has a default PDA value
             const hasDefaultPda = account.defaultValue && isNode(account.defaultValue, 'pdaValueNode');
-            
+
             // Check if this account has a builtin program default
             const builtinAddress = getBuiltinProgramAddress(account.name);
 
@@ -46,7 +47,7 @@ export function getInstructionFunctionFragment(
                             const valueSeed = pdaValue.seeds?.find(
                                 (s: PdaSeedValueNode) => s.name === seed.name,
                             )?.value;
-                            
+
                             // If seed references an instruction argument (not an account), can't auto-derive
                             if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
                                 canAutoderivePda = false;
@@ -103,7 +104,7 @@ export function getInstructionFunctionFragment(
                             const valueSeed = pdaValue.seeds?.find(
                                 (s: PdaSeedValueNode) => s.name === seed.name,
                             )?.value;
-                            
+
                             // If seed references an instruction argument (not an account), can't auto-derive
                             if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
                                 canAutoderivePda = false;
@@ -118,43 +119,7 @@ export function getInstructionFunctionFragment(
                 // Generate PDA derivation code only for derivable PDAs
                 const pdaValue = account.defaultValue;
                 if (isNode(pdaValue.pda, 'pdaNode')) {
-                    const seeds = pdaValue.pda.seeds.map(seed => {
-                        if (isNode(seed, 'constantPdaSeedNode')) {
-                            if (isNode(seed.value, 'stringValueNode')) {
-                                return `utf8.encode("${seed.value.string}")`;
-                            }
-                            if (isNode(seed.value, 'programIdValueNode')) {
-                                return `programId.bytes`;
-                            }
-                            if (isNode(seed.value, 'bytesValueNode')) {
-                                // Convert byte array to Uint8List
-                                const byteArray = Array.from(Buffer.from(seed.value.data, 'hex'));
-                                return `Uint8List.fromList([${byteArray.join(', ')}])`;
-                            }
-                            if (seed.value.kind === 'arrayValueNode' && seed.value.items) {
-                                // Handle array of bytes like [108, 101, 32, 115, 101, 101, 100]
-                                const bytes = seed.value.items.map((item: StandaloneValueNode) =>
-                                    isNode(item, 'numberValueNode') ? item.number : 0,
-                                );
-                                return `Uint8List.fromList([${bytes.join(', ')}])`;
-                            }
-                        }
-                        if (isNode(seed, 'variablePdaSeedNode')) {
-                            // For variable PDA seeds, look for the value in defaultValue.seeds
-                            const valueSeed = pdaValue.seeds?.find(
-                                (s: PdaSeedValueNode) => s.name === seed.name,
-                            )?.value;
-                            if (valueSeed && isNode(valueSeed, 'accountValueNode')) {
-                                // This is an account seed - use the account name
-                                const accountName = valueSeed.name;
-                                return `${accountName}.toByteArray()`;
-                            }
-                            // Handle other variable seeds (would need to be provided when calling the function)
-                            const seedName = nameApi.instructionField(seed.name);
-                            return `${seedName}.toByteArray()`;
-                        }
-                        return 'utf8.encode("fallback")'; // fallback
-                    });
+                    const seeds = generatePdaSeeds(pdaValue.pda, pdaValue.seeds, nameApi);
 
                     pdaResolutions.push(
                         `  final resolved${accountName.charAt(0).toUpperCase() + accountName.slice(1)} = ${accountName} ?? ` +
@@ -164,7 +129,7 @@ export function getInstructionFunctionFragment(
             } else if (builtinAddress) {
                 // Generate builtin program default
                 pdaResolutions.push(
-                    `  final resolved${accountName.charAt(0).toUpperCase() + accountName.slice(1)} = ${accountName} ?? Ed25519HDPublicKey.fromBase58('${builtinAddress}');`
+                    `  final resolved${accountName.charAt(0).toUpperCase() + accountName.slice(1)} = ${accountName} ?? Ed25519HDPublicKey.fromBase58('${builtinAddress}');`,
                 );
             }
         });
@@ -179,7 +144,7 @@ export function getInstructionFunctionFragment(
                 const accountName = nameApi.instructionField(account.name);
                 const hasDefaultPda = account.defaultValue && isNode(account.defaultValue, 'pdaValueNode');
                 const builtinAddress = getBuiltinProgramAddress(account.name);
-                
+
                 // Check if PDA can be auto-derived (doesn't reference instruction arguments)
                 let canAutoderivePda = false;
                 if (hasDefaultPda) {
@@ -192,7 +157,7 @@ export function getInstructionFunctionFragment(
                                 const valueSeed = pdaValue.seeds?.find(
                                     (s: PdaSeedValueNode) => s.name === seed.name,
                                 )?.value;
-                                
+
                                 // If seed references an instruction argument (not an account), can't auto-derive
                                 if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
                                     canAutoderivePda = false;
@@ -202,10 +167,11 @@ export function getInstructionFunctionFragment(
                         }
                     }
                 }
-                
-                const resolvedAccountName = ((hasDefaultPda && canAutoderivePda) || builtinAddress)
-                    ? `resolved${accountName.charAt(0).toUpperCase() + accountName.slice(1)}`
-                    : accountName;
+
+                const resolvedAccountName =
+                    (hasDefaultPda && canAutoderivePda) || builtinAddress
+                        ? `resolved${accountName.charAt(0).toUpperCase() + accountName.slice(1)}`
+                        : accountName;
 
                 const isWriteable = account.isWritable ? 'true' : 'false';
                 const isSigner = account.isSigner === true ? 'true' : 'false';
@@ -231,17 +197,15 @@ export function getInstructionFunctionFragment(
     const needsAsync = instructionNode.accounts.some(account => {
         const hasDefaultPda = account.defaultValue && isNode(account.defaultValue, 'pdaValueNode');
         if (!hasDefaultPda) return false;
-        
+
         // Check if PDA can be auto-derived (doesn't reference instruction arguments)
         const pdaValue = account.defaultValue;
         if (isNode(pdaValue.pda, 'pdaNode')) {
             let canAutoderive = true;
             for (const seed of pdaValue.pda.seeds) {
                 if (isNode(seed, 'variablePdaSeedNode')) {
-                    const valueSeed = pdaValue.seeds?.find(
-                        (s: PdaSeedValueNode) => s.name === seed.name,
-                    )?.value;
-                    
+                    const valueSeed = pdaValue.seeds?.find((s: PdaSeedValueNode) => s.name === seed.name)?.value;
+
                     // If seed references an instruction argument (not an account), can't auto-derive
                     if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
                         canAutoderive = false;
