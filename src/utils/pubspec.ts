@@ -1,6 +1,6 @@
 // Constants for Git-based dependencies
 const REPO_URL = 'https://github.com/vlady-kotsev/borsh_annotation_extended.git';
-const REPO_REF = 'abc277517eef633ec9a8f26aa77f466f5ab371c2';
+const REPO_REF = '4fcc50dced4717257fc7cd4cf2ae5489ebfc1f48';
 
 export function generatePubspec(
     packageName: string,
