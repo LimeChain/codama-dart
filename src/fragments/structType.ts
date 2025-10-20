@@ -13,37 +13,14 @@ export function getStructTypeFragment(
     const className = nameApi.definedType(camelCase(name));
     const fields = node.fields || [];
 
-    const validations = fields
-        .map(field => {
-            const fieldName = nameApi.accountField(field.name);
-
-            if (field.type.kind === 'fixedSizeTypeNode') {
-                const size = field.type.size;
-                if (field.type.type.kind === 'bytesTypeNode') {
-                    return `    if (${fieldName}.length != ${size}) throw ArgumentError('${fieldName} must be exactly ${size} bytes, got \${${fieldName}.length}');`;
-                } else if (field.type.type.kind === 'arrayTypeNode') {
-                    return `    if (${fieldName}.length != ${size}) throw ArgumentError('${fieldName} must have exactly ${size} elements, got \${${fieldName}.length}');`;
-                }
-            }
-
-            if (field.type.kind === 'arrayTypeNode' && field.type.count && field.type.count.kind === 'fixedCountNode') {
-                const size = field.type.count.value;
-                return `    if (${fieldName}.length != ${size}) throw ArgumentError('${fieldName} must have exactly ${size} elements, got \${${fieldName}.length}');`;
-            }
-
-            return '';
-        })
-        .filter(v => v)
-        .join('\n');
 
     // Collect all imports
-    const allImports = new Set(['package:borsh_annotation/borsh_annotation.dart']);
+    const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
     fields.forEach(field => {
         const typeInfo = getTypeInfo(field.type, scope.nameApi);
         typeInfo.imports.forEach(imp => allImports.add(imp));
     });
 
-    const hasValidations = validations.length > 0;
     const factoryParams = fields
         .map(field => {
             const typeInfo = getTypeInfo(field.type, scope.nameApi);
@@ -59,22 +36,8 @@ export function getStructTypeFragment(
 class ${className} with _$${className} {
   factory ${className}({
 ${factoryParams}
-  })${
-      hasValidations
-          ? ` {
-    // Validate fixed-size fields
-${validations}
-    return _${className}(
-${fields
-    .map(field => {
-        const fieldName = nameApi.accountField(field.name);
-        return `      ${fieldName}: ${fieldName},`;
-    })
-    .join('\n')}
-    );
-  }`
-          : ` = _${className};`
-  }
+  }) = _${className};
+  
 
   const ${className}._();
 

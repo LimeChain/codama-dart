@@ -1,6 +1,6 @@
 // Constants for Git-based dependencies
-const REPO_URL = 'https://github.com/vlady-kotsev/espresso-cash-public.git';
-const REPO_REF = '88f5db7cb883a8e81ed4932fee4933f1a97e5b79';
+const REPO_URL = 'https://github.com/vlady-kotsev/borsh_annotation_extended.git';
+const REPO_REF = 'f2fb3ca293d5243ae2ab4956d49c521877c5f60d';
 
 export function generatePubspec(
     packageName: string,
@@ -14,7 +14,7 @@ export function generatePubspec(
     } = {},
 ): string {
     const {
-        description = 'Generated Dart package for generated Solana program interaction',
+        description = 'Generated Dart package for Solana program interaction',
         version = '1.0.0',
         author,
         homepage,
@@ -45,31 +45,13 @@ export function generatePubspec(
     sections.push('', 'dependencies:');
 
     // Borsh dependency
-    sections.push(
-        '  borsh:',
-        '    git:',
-        `      url: ${REPO_URL}`,
-        `      ref: ${REPO_REF}`,
-        '      path: packages/borsh',
-    );
+    sections.push('  borsh: 0.3.2');
 
     // Borsh annotation dependency
-    sections.push(
-        '  borsh_annotation:',
-        '    git:',
-        `      url: ${REPO_URL}`,
-        `      ref: ${REPO_REF}`,
-        '      path: packages/borsh_annotation',
-    );
+    sections.push('  borsh_annotation_extended:', '    git:', `      url: ${REPO_URL}`, `      ref: ${REPO_REF}`);
 
     // Solana dependency
-    sections.push(
-        '  solana:',
-        '    git:',
-        `      url: ${REPO_URL}`,
-        `      ref: ${REPO_REF}`,
-        '      path: packages/solana',
-    );
+    sections.push('  solana: 0.31.2');
 
     // Add any additional dependencies
     Object.entries(dependencies).forEach(([name, version]) => {
@@ -82,17 +64,6 @@ export function generatePubspec(
             sections.push(`  ${name}: ${version}`);
         });
     }
-
-    // Add dependency overrides
-    sections.push(
-        '',
-        'dependency_overrides:',
-        '  borsh_annotation:',
-        '    git:',
-        `      url: ${REPO_URL}`,
-        '      path: packages/borsh_annotation',
-        `      ref: ${REPO_REF}`,
-    );
 
     return sections.join('\n') + '\n';
 }

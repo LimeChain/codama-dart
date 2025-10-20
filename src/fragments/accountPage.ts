@@ -25,8 +25,8 @@ export function getAccountPageFragment(
     const typeInfo = getTypeInfo(dataTypeNode, scope.nameApi);
     const borshAnnotation = getBorshAnnotation(dataTypeNode, scope.nameApi);
     const allImports = [
-        'package:borsh_annotation/borsh_annotation.dart',
-        ...typeInfo.imports.filter(imp => imp !== 'dart:typed_data'),
+        'package:borsh_annotation_extended/borsh_annotation_extended.dart',
+        ...typeInfo.imports,
     ];
 
     const content = `part '${node.name}.g.dart';
@@ -77,10 +77,10 @@ function getStructAccountFragment(
         })
         .join('\n');
 
-    const allImports = new Set(['package:borsh_annotation/borsh_annotation.dart']);
+    const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
     fields.forEach(field => {
         const typeInfo = getTypeInfo(field.type, scope.nameApi);
-        typeInfo.imports.filter(imp => imp !== 'dart:typed_data').forEach(imp => allImports.add(imp));
+        typeInfo.imports.forEach(imp => allImports.add(imp));
     });
 
     const content = `part '${node.name}.g.dart';

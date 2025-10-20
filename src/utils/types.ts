@@ -37,12 +37,6 @@ export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi): TypeInfo {
             return getArrayTypeInfo(typeNode, nameApi);
         case 'optionTypeNode':
             return getOptionTypeInfo(typeNode, nameApi);
-        case 'setTypeNode':
-            return getSetTypeInfo();
-        case 'mapTypeNode':
-            return getMapTypeInfo();
-        case 'dateTimeTypeNode':
-            return getDateTimeTypeInfo();
         case 'publicKeyTypeNode':
             return getPublicKeyTypeInfo();
         case 'fixedSizeTypeNode':
@@ -110,7 +104,6 @@ function getStringTypeInfo(): TypeInfo {
         dartType: 'String',
         defaultValue: "''",
         imports: [],
-        // Variable size - will need length prefix
     };
 }
 
@@ -119,23 +112,20 @@ function getBytesTypeInfo(): TypeInfo {
         dartType: 'Uint8List',
         defaultValue: 'Uint8List(0)',
         imports: [],
-        // Variable size - will need length prefix
     };
 }
 
 function getArrayTypeInfo(node: ArrayTypeNode, nameApi: NameApi): TypeInfo {
-    // Resolve the nested type to get the actual item type
     const resolvedType = resolveNestedTypeNode(node.item);
     const innerTypeInfo = getTypeInfo(resolvedType, nameApi);
 
-    // Check if this is a fixed-size array
     if (node.count && node.count.kind === 'fixedCountNode') {
         const size = node.count.value;
         return {
             dartType: `List<${innerTypeInfo.dartType}>`,
             defaultValue: `List.filled(${size}, ${innerTypeInfo.defaultValue})`,
             imports: innerTypeInfo.imports,
-            serializationSize: size, // Mark as fixed size
+            serializationSize: size,
         };
     }
 
@@ -143,46 +133,17 @@ function getArrayTypeInfo(node: ArrayTypeNode, nameApi: NameApi): TypeInfo {
         dartType: `List<${innerTypeInfo.dartType}>`,
         defaultValue: 'const []',
         imports: innerTypeInfo.imports,
-        // Variable size
     };
 }
 
 function getOptionTypeInfo(node: OptionTypeNode, nameApi: NameApi): TypeInfo {
-    // Resolve the nested type to get the actual inner type
     const resolvedType = resolveNestedTypeNode(node.item);
     const innerTypeInfo = getTypeInfo(resolvedType, nameApi);
 
-    // Dart doesn't have built-in Option, we'll use nullable types
     return {
         dartType: `${innerTypeInfo.dartType}?`,
         defaultValue: 'null',
         imports: innerTypeInfo.imports,
-        // Variable size depending on content
-    };
-}
-
-function getSetTypeInfo(): TypeInfo {
-    return {
-        dartType: 'Set<Object>',
-        defaultValue: 'const {}',
-        imports: [],
-    };
-}
-
-function getMapTypeInfo(): TypeInfo {
-    return {
-        dartType: 'Map<Object, Object>',
-        defaultValue: 'const {}',
-        imports: [],
-    };
-}
-
-function getDateTimeTypeInfo(): TypeInfo {
-    return {
-        dartType: 'DateTime',
-        defaultValue: 'DateTime.now()',
-        imports: [],
-        serializationSize: 8, // Usually stored as timestamp
     };
 }
 
@@ -229,7 +190,6 @@ function getAmountTypeInfo(): TypeInfo {
     };
 }
 
-
 export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string {
     switch (typeNode.kind) {
         case 'numberTypeNode': {
@@ -265,22 +225,22 @@ export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string
         case 'bytesTypeNode':
             return '@BBytes()';
         case 'publicKeyTypeNode':
-            return '@BPublicKey()'; // Use custom BPublicKey annotation
+            return '@BPublicKey()';
         case 'fixedSizeTypeNode': {
             const fixedNode = typeNode as FixedSizeTypeNode;
             const resolvedType = resolveNestedTypeNode(fixedNode.type);
+            
             if (resolvedType.kind === 'bytesTypeNode') {
                 return `@BFixedBytes(${fixedNode.size})`;
             }
+            
             const innerAnnotation = getBorshAnnotation(resolvedType, nameApi);
             return `@BFixedArray(${fixedNode.size}, ${innerAnnotation.replace('@', '')})`;
         }
         case 'arrayTypeNode': {
             const arrayNode = typeNode as ArrayTypeNode;
-            // Don't resolve nested types here - pass the original item type to getBorshAnnotation
             const arrayInnerAnnotation = getBorshAnnotation(arrayNode.item, nameApi);
 
-            // Check if this is a fixed-size array
             if (arrayNode.count && arrayNode.count.kind === 'fixedCountNode') {
                 const size = arrayNode.count.value;
                 return `@BFixedArray(${size}, ${arrayInnerAnnotation.replace('@', '')})`;
@@ -297,25 +257,22 @@ export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string
         case 'definedTypeLinkNode': {
             const definedTypeNode = typeNode as DefinedTypeLinkNode;
             const className = nameApi.definedType(definedTypeNode.name);
-            return `@BCustom(B${className}())`;
+            return `@B${className}()`;
         }
         case 'sizePrefixTypeNode': {
             const sizePrefixNode = typeNode as SizePrefixTypeNode;
             const resolvedType = resolveNestedTypeNode(sizePrefixNode.type);
 
-            // If it's bytes with size prefix, use BBytes (variable length bytes with u32 prefix)
             if (resolvedType.kind === 'bytesTypeNode') {
                 return '@BBytes()';
             }
 
-            // For other size-prefixed types (like strings), use BString
             return '@BString()';
         }
         default:
-            return '@BArray(BU8())'; // fallback for unsupported types
+            return '@BArray(BU8())';
     }
 }
-
 
 function getDefinedTypeLinkTypeInfo(node: DefinedTypeLinkNode, className: string): TypeInfo {
     // Generate import path for the custom type

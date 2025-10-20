@@ -55,7 +55,11 @@ export function getInstructionDataFragment(
         ? `    if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got \${discriminator.length}');\n${validations}`
         : `    if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got \${discriminator.length}');`;
 
-    const allImports = new Set(['package:borsh_annotation/borsh_annotation.dart', 'package:solana/solana.dart']);
+    const allImports = new Set([
+        'package:borsh_annotation_extended/borsh_annotation_extended.dart',
+        'package:solana/solana.dart',
+        'package:solana/encoder.dart',
+    ]);
     structNode.fields.forEach(field => {
         const typeInfo = getTypeInfo(field.type, nameApi);
         typeInfo.imports.forEach(imp => allImports.add(imp));
