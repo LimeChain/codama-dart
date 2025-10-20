@@ -196,20 +196,25 @@ export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string
             const numberFormat = (typeNode as NumberTypeNode).format;
             switch (numberFormat) {
                 case 'u8':
-                case 'i8':
                     return '@BU8()';
+                case 'i8':
+                    return '@BI8()';
                 case 'u16':
-                case 'i16':
                     return '@BU16()';
+                case 'i16':
+                    return '@BI16()';
                 case 'u32':
-                case 'i32':
                     return '@BU32()';
+                case 'i32':
+                    return '@BI32()';
                 case 'u64':
-                case 'i64':
                     return '@BU64()';
+                case 'i64':
+                    return '@BI64()';
                 case 'u128':
-                case 'i128':
                     return '@BU128()';
+                case 'i128':
+                    return '@BI128()';
                 case 'f32':
                     return '@BF32()';
                 case 'f64':
@@ -229,11 +234,11 @@ export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string
         case 'fixedSizeTypeNode': {
             const fixedNode = typeNode as FixedSizeTypeNode;
             const resolvedType = resolveNestedTypeNode(fixedNode.type);
-            
+
             if (resolvedType.kind === 'bytesTypeNode') {
                 return `@BFixedBytes(${fixedNode.size})`;
             }
-            
+
             const innerAnnotation = getBorshAnnotation(resolvedType, nameApi);
             return `@BFixedArray(${fixedNode.size}, ${innerAnnotation.replace('@', '')})`;
         }
