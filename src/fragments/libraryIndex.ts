@@ -38,6 +38,11 @@ export function getLibraryIndexFragment(scope: { rootNode: RootNode }): Fragment
         if (program.errors.length > 0) {
             exports.push(`export 'errors/${program.name}.dart';`);
         }
+
+        // Export programs
+        if (program.name) {
+            exports.push(`export 'programs/${program.name}.dart';`);
+        }
     });
 
     exports.sort();
