@@ -29,7 +29,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions) {
     const stack = new NodeStack();
 
     const byteSizeVisitor = getByteSizeVisitor(linkables, { stack });
-    const libraryName = options.libraryName ?? 'lib';
+    const libraryName = 'lib';
     const outputDirectory = options.outputDirectory;
 
     // Create the complete render scope
