@@ -2,6 +2,7 @@ import { CamelCaseString, isNode, PdaNode, PdaSeedValueNode, StandaloneValueNode
 
 import { Fragment } from './fragment';
 import { RenderScope } from './options';
+import { getTypeInfo, serializeDartValue } from './types';
 
 /**
  * Generates Dart code for PDA seeds based on a PDA node and its seed values
@@ -35,9 +36,15 @@ export function generatePdaSeeds(
         if (isNode(seed, 'variablePdaSeedNode')) {
             const valueSeed = pdaSeedValues?.find((s: PdaSeedValueNode) => s.name === seed.name)?.value;
 
-            if (valueSeed && (isNode(valueSeed, 'accountValueNode') || isNode(valueSeed, 'argumentValueNode'))) {
+            if (valueSeed && (isNode(valueSeed, 'accountValueNode'))) {
                 const paramName = valueSeed.name;
                 return `${paramName}.toByteArray()`;
+            }
+            if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
+                const paramName = valueSeed.name;
+                const dartType = getTypeInfo(seed.type, nameApi).dartType;
+                const result = serializeDartValue(paramName, dartType);
+                return `${result}`;
             }
 
             const seedName = nameApi.instructionField(seed.name);
@@ -99,7 +106,7 @@ Future<Ed25519HDPublicKey> ${functionName}(${parameterList}) async {
   );
 }`;
 
-    const imports = new Set(['package:solana/solana.dart', 'dart:typed_data']);
+    const imports = new Set(['dart:convert', 'package:solana/solana.dart', 'dart:typed_data']);
     if (programClassName) {
         imports.add(`../programs/${programName}.dart`);
     }
