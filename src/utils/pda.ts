@@ -85,7 +85,8 @@ export function createInlinePdaFile(
             if (valueSeed && (isNode(valueSeed, 'accountValueNode') || isNode(valueSeed, 'argumentValueNode'))) {
                 // This is either an account or argument parameter
                 const paramName = valueSeed.name;
-                parameters.push(`Ed25519HDPublicKey ${paramName}`);
+                const dartType = getTypeInfo(seed.type, nameApi).dartType;
+                parameters.push(`${dartType} ${paramName}`);
             }
         }
     });
