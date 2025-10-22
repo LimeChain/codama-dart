@@ -3,6 +3,7 @@ import { NameApi } from './nameTransformers';
 export type RenderOptions = GetRenderMapOptions & {
     deleteFolderBeforeRendering?: boolean;
     formatCode?: boolean;
+    generateBorsh?: boolean;
 };
 
 export type GetRenderMapOptions = {
