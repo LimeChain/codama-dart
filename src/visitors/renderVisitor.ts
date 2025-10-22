@@ -16,8 +16,8 @@ export function renderVisitor(path: string, options: RenderOptions) {
 
         if (options.formatCode ?? true) {
             try {
-                execSync(`dart format "${path}"`, {
-                    cwd: process.cwd(),
+                execSync(`dart format .`, {
+                    cwd: path,
                     stdio: 'ignore',
                 });
                 console.log('Dart formatting completed successfully.');
@@ -26,6 +26,26 @@ export function renderVisitor(path: string, options: RenderOptions) {
                     `Warning: Failed to format Dart code. Make sure Dart SDK is installed and accessible.: ${error instanceof Error ? error.message : String(error)}`,
                 );
                 console.warn('You can manually format the code by running: dart format "' + path + '"');
+            }
+        }
+        if (options.generateBorsh ?? true) {
+            try {
+                execSync('dart pub get', {
+                    cwd: path,
+                    stdio: 'ignore',
+                });
+                execSync('dart run build_runner build', {
+                    cwd: path,
+                    stdio: 'ignore',
+                });
+                execSync('dart fix --apply', {
+                    cwd: path,
+                    stdio: 'ignore',
+                });
+            } catch (error) {
+                console.log(error);
+                console.warn('Warning: Failed to run Dart commands. Make sure Dart SDK is installed.');
+                console.warn(`You can manually run commands in ${path}: dart pub get && dart run build_runner build && dart fix --apply`);
             }
         }
     });
