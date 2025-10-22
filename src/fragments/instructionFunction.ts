@@ -1,9 +1,8 @@
-import { InstructionNode, isNode, PdaSeedValueNode } from '@codama/nodes';
+import { InstructionNode, isNode, PdaSeedValueNode} from '@codama/nodes';
 import { findProgramNodeFromPath, getLastNodeFromPath, NodePath } from '@codama/visitors-core';
 
-import { createFragment, Fragment, RenderScope } from '../utils';
+import { createFragment, Fragment, pascalCase, RenderScope } from '../utils';
 import { getBuiltinProgramAddress } from '../utils/builtinPrograms';
-import { generatePdaSeeds } from '../utils/pda';
 
 export function getInstructionFunctionFragment(
     scope: Pick<RenderScope, 'nameApi'> & {
@@ -30,6 +29,7 @@ export function getInstructionFunctionFragment(
     const hasArguments = instructionNode.arguments.length > 0;
 
     const params: string[] = [];
+    const pdaImports = new Set<string>();
 
     if (hasAccounts) {
         instructionNode.accounts.forEach(account => {
@@ -51,7 +51,7 @@ export function getInstructionFunctionFragment(
                             )?.value;
 
                             if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
-                                canAutoderivePda = false;
+                                canAutoderivePda = true;
                                 break;
                             }
                         }
@@ -100,7 +100,7 @@ export function getInstructionFunctionFragment(
                             )?.value;
 
                             if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
-                                canAutoderivePda = false;
+                                canAutoderivePda = true
                                 break;
                             }
                         }
@@ -111,11 +111,24 @@ export function getInstructionFunctionFragment(
             if (hasDefaultPda && canAutoderivePda) {
                 const pdaValue = account.defaultValue;
                 if (isNode(pdaValue.pda, 'pdaNode')) {
-                    const seeds = generatePdaSeeds(pdaValue.pda, pdaValue.seeds, nameApi);
+                    const resolvePdaFunctionName = `derive${pascalCase(pdaValue.pda.name)}Pda`;
+
+                    const params: string[] = [];
+
+                    pdaValue.seeds.forEach(seed => {
+                        if (isNode(seed.value, 'accountValueNode')) {
+                            params.push(`${seed.name}`);
+
+                        } else {
+                            params.push(`data.${seed.name}`);
+                        }
+                    })
+
+                    pdaImports.add(`../pdas/${pdaValue.pda.name}.dart`);
 
                     pdaResolutions.push(
                         `  final resolved${accountName.charAt(0).toUpperCase() + accountName.slice(1)} = ${accountName} ?? ` +
-                            `await Ed25519HDPublicKey.findProgramAddress(\n    seeds: [${seeds.join(', ')}],\n    programId: programId ?? Ed25519HDPublicKey.fromBase58(${rootProgramClassName}),\n  );`,
+                            `await ${resolvePdaFunctionName}(${params.join(', ')});`,
                     );
                 }
             } else if (builtinAddress) {
@@ -147,7 +160,7 @@ export function getInstructionFunctionFragment(
                                 )?.value;
 
                                 if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
-                                    canAutoderivePda = false;
+                                    canAutoderivePda = true;
                                     break;
                                 }
                             }
@@ -191,7 +204,7 @@ export function getInstructionFunctionFragment(
                     const valueSeed = pdaValue.seeds?.find((s: PdaSeedValueNode) => s.name === seed.name)?.value;
 
                     if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
-                        canAutoderive = false;
+                        canAutoderive = true;
                         break;
                     }
                 }
@@ -217,7 +230,10 @@ ${asyncModifier}Instruction${asyncSuffix} ${functionName}(${parameterList}) ${as
 ${functionBody}
 }`;
 
-    const imports = new Set(['package:solana/solana.dart']);
+    const imports = new Set([
+        'package:solana/solana.dart',
+        ...pdaImports,
+    ]);
     if (rootNode) {
         imports.add(`../programs/${rootNode.program.name}.dart`);
     }

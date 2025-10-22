@@ -66,7 +66,7 @@ export function getNameApi(transformers: Partial<NameTransformers> = {}): NameAp
     return { ...DEFAULT_NAME_TRANSFORMERS, ...transformers };
 }
 
-function pascalCase(str: string): string {
+export function pascalCase(str: string): string {
     return str.charAt(0).toUpperCase() + camelCase(str).slice(1);
 }
 

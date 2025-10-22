@@ -310,3 +310,24 @@ function getSizePrefixTypeInfo(node: SizePrefixTypeNode): TypeInfo {
         imports: [],
     };
 }
+
+/**
+ * Returns Dart code for serializing a value of the given dartType.
+ */
+export function generateDartSeedSerializationCode(paramName: string, dartType: string): string {
+    switch (dartType) {
+        case 'String':
+            return `Uint8List.fromList(utf8.encode(${paramName}))`;
+        case 'Uint8List':
+            return paramName;
+        case 'int':
+            return `Uint8List.fromList(List.generate(8, (i) => (((${paramName}) >> (8 * i)) & 0xff)))`;
+        case 'BigInt':
+            return `Uint8List.fromList(List.generate(8, (i) => (((${paramName}) >> (8 * i)) & BigInt.from(0xff)).toInt()))`;
+        case 'bool':
+            return `Uint8List.fromList([${paramName} ? 1 : 0])`;
+        default:
+            // Assume custom type with Borsh serialization
+            return `${paramName}.toBorsh()`;
+    }
+}
