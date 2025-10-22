@@ -2,7 +2,7 @@ import { CamelCaseString, isNode, PdaNode, PdaSeedValueNode, StandaloneValueNode
 
 import { Fragment } from './fragment';
 import { RenderScope } from './options';
-import { getTypeInfo, serializeDartValue } from './types';
+import { generateDartSeedSerializationCode,getTypeInfo } from './types';
 
 /**
  * Generates Dart code for PDA seeds based on a PDA node and its seed values
@@ -43,8 +43,8 @@ export function generatePdaSeeds(
             if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
                 const paramName = valueSeed.name;
                 const dartType = getTypeInfo(seed.type, nameApi).dartType;
-                const result = serializeDartValue(paramName, dartType);
-                return `${result}`;
+                const fieldSerializationCode = generateDartSeedSerializationCode(paramName, dartType);
+                return `${fieldSerializationCode}`;
             }
 
             const seedName = nameApi.instructionField(seed.name);

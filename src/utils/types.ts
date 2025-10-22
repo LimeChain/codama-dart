@@ -314,22 +314,17 @@ function getSizePrefixTypeInfo(node: SizePrefixTypeNode): TypeInfo {
 /**
  * Returns Dart code for serializing a value of the given dartType.
  */
-export function serializeDartValue(paramName: string, dartType: string): string {
+export function generateDartSeedSerializationCode(paramName: string, dartType: string): string {
     switch (dartType) {
         case 'String':
-            // UTF-8 encode the string
             return `Uint8List.fromList(utf8.encode(${paramName}))`;
         case 'Uint8List':
-            // Already bytes
             return paramName;
         case 'int':
-            // 8-byte little-endian for Solana PDA seeds
             return `Uint8List.fromList(List.generate(8, (i) => (((${paramName}) >> (8 * i)) & 0xff)))`;
         case 'BigInt':
-            // 8-byte little-endian for Solana PDA seeds
             return `Uint8List.fromList(List.generate(8, (i) => (((${paramName}) >> (8 * i)) & BigInt.from(0xff)).toInt()))`;
         case 'bool':
-            // Single byte: 1 for true, 0 for false
             return `Uint8List.fromList([${paramName} ? 1 : 0])`;
         default:
             // Assume custom type with Borsh serialization
