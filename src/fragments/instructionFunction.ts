@@ -217,7 +217,7 @@ ${asyncModifier}Instruction${asyncSuffix} ${functionName}(${parameterList}) ${as
 ${functionBody}
 }`;
 
-    const imports = new Set(['package:solana/solana.dart']);
+    const imports: Set<string> = new Set([]);
     if (rootNode) {
         imports.add(`../programs/${rootNode.program.name}.dart`);
     }
