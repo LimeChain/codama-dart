@@ -20,7 +20,6 @@ export function renderVisitor(path: string, options: RenderOptions) {
                     cwd: path,
                     stdio: 'ignore',
                 });
-                console.log('Dart formatting completed successfully.');
             } catch (error) {
                 console.warn(
                     `Warning: Failed to format Dart code. Make sure Dart SDK is installed and accessible.: ${error instanceof Error ? error.message : String(error)}`,
@@ -42,10 +41,11 @@ export function renderVisitor(path: string, options: RenderOptions) {
                     cwd: path,
                     stdio: 'ignore',
                 });
-            } catch (error) {
-                console.log(error);
+            } catch {
                 console.warn('Warning: Failed to run Dart commands. Make sure Dart SDK is installed.');
-                console.warn(`You can manually run commands in ${path}: dart pub get && dart run build_runner build && dart fix --apply`);
+                console.warn(
+                    `You can manually run commands in ${path}: dart pub get && dart run build_runner build && dart fix --apply`,
+                );
             }
         }
     });

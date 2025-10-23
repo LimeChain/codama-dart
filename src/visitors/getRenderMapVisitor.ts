@@ -1,4 +1,12 @@
-import { camelCase, getAllInstructionsWithSubs, getAllPrograms, isNode } from '@codama/nodes';
+import {
+    camelCase,
+    DefinedTypeNode,
+    EnumTypeNode,
+    EnumVariantTypeNode,
+    getAllInstructionsWithSubs,
+    getAllPrograms,
+    isNode,
+} from '@codama/nodes';
 import { createRenderMap, mergeRenderMaps } from '@codama/renderers-core';
 import {
     extendVisitor,
@@ -15,6 +23,8 @@ import {
 
 import {
     getAccountPageFragment,
+    getEnumMainFragment,
+    getEnumVariantFragment,
     getErrorPageFragment,
     getInstructionPageFragment,
     getLibraryIndexFragment,
@@ -27,24 +37,107 @@ import { createInlinePdaFile } from '../utils/pda';
 export function getRenderMapVisitor(options: GetRenderMapOptions) {
     const linkables = new LinkableDictionary();
     const stack = new NodeStack();
-
-    const byteSizeVisitor = getByteSizeVisitor(linkables, { stack });
     const libraryName = 'lib';
-    const outputDirectory = options.outputDirectory;
+    const byteSizeVisitor = getByteSizeVisitor(linkables, { stack });
 
-    // Create the complete render scope
-    const renderScope: RenderScope = {
-        libraryName,
-        nameApi: getNameApi(options.nameTransformers),
-        outputDirectory,
+    const getProgramDefinedTypes = (): DefinedTypeNode[] => {
+        try {
+            const programNode = findProgramNodeFromPath(stack.getPath('definedTypeNode'));
+            return programNode?.definedTypes || [];
+        } catch {
+            return [];
+        }
     };
 
-    const asPage = <TFragment extends Fragment | undefined>(
-        fragment: TFragment,
-        pageOptions: { libraryName?: string } = {},
-    ): TFragment => {
+    const renderScope: RenderScope = {
+        definedTypes: getProgramDefinedTypes(),
+        nameApi: getNameApi(options.nameTransformers),
+    };
+
+    const asPage = <TFragment extends Fragment | undefined>(fragment: TFragment): TFragment => {
         if (!fragment) return undefined as TFragment;
-        return getPageFragment(fragment, pageOptions) as TFragment;
+        return getPageFragment(fragment) as TFragment;
+    };
+
+    const visitEnumType = (enumNode: DefinedTypeNode, programDefinedTypes: DefinedTypeNode[]) => {
+        const enumType = enumNode.type as EnumTypeNode;
+        const variants = enumType.variants || [];
+        const enumName = camelCase(enumNode.name);
+        const enumRenderScope = { ...renderScope, definedTypes: programDefinedTypes };
+
+        const variantRenderMaps = variants.map((variant: EnumVariantTypeNode) => {
+            switch (variant.kind) {
+                case 'enumEmptyVariantTypeNode':
+                    return visitEnumEmptyVariantType(variant, enumName, enumRenderScope);
+                case 'enumStructVariantTypeNode':
+                    return visitEnumStructVariantType(variant, enumName, enumRenderScope);
+                case 'enumTupleVariantTypeNode':
+                    return visitEnumTupleVariantType(variant, enumName, enumRenderScope);
+                default:
+                    return createRenderMap();
+            }
+        });
+
+        const mainEnumRenderMap = createRenderMap(
+            `${libraryName}/types/${enumName}/${enumName}.dart`,
+            asPage(
+                getEnumMainFragment({
+                    ...enumRenderScope,
+                    name: enumNode.name,
+                    node: enumNode,
+                }),
+            ),
+        );
+
+        return mergeRenderMaps([mainEnumRenderMap, ...variantRenderMaps]);
+    };
+
+    const visitEnumEmptyVariantType = (variant: EnumVariantTypeNode, enumName: string, scope: RenderScope) => {
+        const variantName = renderScope.nameApi.definedType(camelCase(variant.name));
+        const variantFileName = camelCase(variant.name);
+
+        return createRenderMap(
+            `${libraryName}/types/${enumName}/${variantFileName}.dart`,
+            asPage(
+                getEnumVariantFragment({
+                    ...scope,
+                    variant,
+                    variantName,
+                }),
+            ),
+        );
+    };
+
+    const visitEnumStructVariantType = (variant: EnumVariantTypeNode, enumName: string, scope: RenderScope) => {
+        const variantName = renderScope.nameApi.definedType(camelCase(variant.name));
+        const variantFileName = camelCase(variant.name);
+
+        return createRenderMap(
+            `${libraryName}/types/${enumName}/${variantFileName}.dart`,
+            asPage(
+                getEnumVariantFragment({
+                    ...scope,
+                    variant,
+                    variantName,
+                }),
+            ),
+        );
+    };
+
+    const visitEnumTupleVariantType = (variant: EnumVariantTypeNode, enumName: string, scope: RenderScope) => {
+        const variantName = renderScope.nameApi.definedType(camelCase(variant.name));
+        const variantFileName = camelCase(variant.name);
+
+        return createRenderMap(
+            `${libraryName}/types/${enumName}/${variantFileName}.dart`,
+            asPage(
+                getEnumVariantFragment({
+                    ...scope,
+                    variant,
+                    variantName,
+                }),
+            ),
+        );
     };
 
     return pipe(
@@ -68,18 +161,23 @@ export function getRenderMapVisitor(options: GetRenderMapOptions) {
                 },
 
                 visitDefinedType(node) {
+                    const programDefinedTypes = getProgramDefinedTypes();
+
                     if (node.type.kind === 'structTypeNode') {
                         return createRenderMap(
                             `${libraryName}/types/${camelCase(node.name)}.dart`,
                             asPage(
                                 getStructTypeFragment({
                                     ...renderScope,
+                                    definedTypes: programDefinedTypes,
                                     name: node.name,
                                     node: node.type,
                                     size: visit(node, byteSizeVisitor),
                                 }),
                             ),
                         );
+                    } else if (node.type.kind === 'enumTypeNode') {
+                        return visitEnumType(node, programDefinedTypes);
                     }
                     return createRenderMap();
                 },
@@ -134,14 +232,16 @@ export function getRenderMapVisitor(options: GetRenderMapOptions) {
                 },
 
                 visitProgram(node, { self }) {
+                    const programRenderScope = { ...renderScope, definedTypes: node.definedTypes };
+
                     return mergeRenderMaps([
                         createRenderMap({
                             [`${libraryName}/programs/${camelCase(node.name)}.dart`]: asPage(
-                                getProgramPageFragment({ ...renderScope, programNode: node }),
+                                getProgramPageFragment({ ...programRenderScope, programNode: node }),
                             ),
                             [`${libraryName}/errors/${camelCase(node.name)}.dart`]:
                                 node.errors.length > 0
-                                    ? asPage(getErrorPageFragment({ ...renderScope, programNode: node }))
+                                    ? asPage(getErrorPageFragment({ ...programRenderScope, programNode: node }))
                                     : undefined,
                         }),
                         ...node.pdas.map(p => visit(p, self)),

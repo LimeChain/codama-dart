@@ -1,7 +1,12 @@
 import {
     ArrayTypeNode,
+    camelCase,
     DefinedTypeLinkNode,
+    DefinedTypeNode,
+    EnumTypeNode,
+    EnumVariantTypeNode,
     FixedSizeTypeNode,
+    Node,
     NumberTypeNode,
     OptionTypeNode,
     resolveNestedTypeNode,
@@ -9,11 +14,11 @@ import {
     TypeNode,
 } from '@codama/nodes';
 
+import { getBEnumAnnotation } from '../fragments/enumType';
 import { NameApi } from './nameTransformers';
 
 // Constants for hardcoded values
 const DEFAULT_PUBLIC_KEY = '11111111111111111111111111111111';
-const TYPES_IMPORT_PREFIX = '../types/';
 const SOLANA_PUBLIC_KEY_SIZE = 32;
 
 export interface TypeInfo {
@@ -23,7 +28,7 @@ export interface TypeInfo {
     serializationSize?: number;
 }
 
-export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi): TypeInfo {
+export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi, allDefinedTypes: DefinedTypeNode[]): TypeInfo {
     switch (typeNode.kind) {
         case 'numberTypeNode':
             return getNumberTypeInfo(typeNode);
@@ -34,21 +39,20 @@ export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi): TypeInfo {
         case 'bytesTypeNode':
             return getBytesTypeInfo();
         case 'arrayTypeNode':
-            return getArrayTypeInfo(typeNode, nameApi);
+            return getArrayTypeInfo(typeNode, nameApi, allDefinedTypes);
         case 'optionTypeNode':
-            return getOptionTypeInfo(typeNode, nameApi);
+            return getOptionTypeInfo(typeNode, nameApi, allDefinedTypes);
         case 'publicKeyTypeNode':
             return getPublicKeyTypeInfo();
         case 'fixedSizeTypeNode':
-            return getFixedSizeTypeInfo(typeNode, nameApi);
+            return getFixedSizeTypeInfo(typeNode, nameApi, allDefinedTypes);
         case 'solAmountTypeNode':
             return getAmountTypeInfo();
         case 'definedTypeLinkNode':
-            return getDefinedTypeLinkTypeInfo(typeNode, nameApi.definedType(typeNode.name));
+            return getDefinedTypeLinkTypeInfo(typeNode, nameApi.definedType(typeNode.name), allDefinedTypes);
         case 'sizePrefixTypeNode':
             return getSizePrefixTypeInfo(typeNode);
         default:
-            // For unsupported types, return a generic object type
             return {
                 dartType: 'Object',
                 defaultValue: 'Object()',
@@ -115,9 +119,14 @@ function getBytesTypeInfo(): TypeInfo {
     };
 }
 
-function getArrayTypeInfo(node: ArrayTypeNode, nameApi: NameApi): TypeInfo {
+function getArrayTypeInfo(
+    node: ArrayTypeNode,
+    nameApi: NameApi,
+
+    allDefinedTypes: DefinedTypeNode[],
+): TypeInfo {
     const resolvedType = resolveNestedTypeNode(node.item);
-    const innerTypeInfo = getTypeInfo(resolvedType, nameApi);
+    const innerTypeInfo = getTypeInfo(resolvedType, nameApi, allDefinedTypes);
 
     if (node.count && node.count.kind === 'fixedCountNode') {
         const size = node.count.value;
@@ -136,9 +145,9 @@ function getArrayTypeInfo(node: ArrayTypeNode, nameApi: NameApi): TypeInfo {
     };
 }
 
-function getOptionTypeInfo(node: OptionTypeNode, nameApi: NameApi): TypeInfo {
+function getOptionTypeInfo(node: OptionTypeNode, nameApi: NameApi, allDefinedTypes: DefinedTypeNode[]): TypeInfo {
     const resolvedType = resolveNestedTypeNode(node.item);
-    const innerTypeInfo = getTypeInfo(resolvedType, nameApi);
+    const innerTypeInfo = getTypeInfo(resolvedType, nameApi, allDefinedTypes);
 
     return {
         dartType: `${innerTypeInfo.dartType}?`,
@@ -151,16 +160,14 @@ function getPublicKeyTypeInfo(): TypeInfo {
     return {
         dartType: 'Ed25519HDPublicKey',
         defaultValue: `Ed25519HDPublicKey.fromBase58("${DEFAULT_PUBLIC_KEY}")`,
-        imports: ['package:solana/solana.dart'],
+        imports: [],
         serializationSize: SOLANA_PUBLIC_KEY_SIZE,
     };
 }
 
-function getFixedSizeTypeInfo(node: FixedSizeTypeNode, nameApi: NameApi): TypeInfo {
-    // Resolve the nested type to get the actual inner type
+function getFixedSizeTypeInfo(node: FixedSizeTypeNode, nameApi: NameApi, allDefinedTypes: DefinedTypeNode[]): TypeInfo {
     const resolvedType = resolveNestedTypeNode(node.type);
 
-    // Special case: fixed-size byte arrays should be Uint8List
     if (resolvedType.kind === 'bytesTypeNode') {
         return {
             dartType: 'Uint8List',
@@ -170,9 +177,8 @@ function getFixedSizeTypeInfo(node: FixedSizeTypeNode, nameApi: NameApi): TypeIn
         };
     }
 
-    const innerTypeInfo = getTypeInfo(resolvedType, nameApi);
+    const innerTypeInfo = getTypeInfo(resolvedType, nameApi, allDefinedTypes);
 
-    // For other fixed-size arrays, create List<innerType>
     return {
         dartType: `List<${innerTypeInfo.dartType}>`,
         defaultValue: `List.filled(${node.size}, ${innerTypeInfo.defaultValue})`,
@@ -190,7 +196,11 @@ function getAmountTypeInfo(): TypeInfo {
     };
 }
 
-export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string {
+function stripAnnotationPrefix(annotation: string): string {
+    return annotation.replace('@', '');
+}
+
+export function getBorshAnnotation(typeNode: Node, nameApi: NameApi, allDefinedTypes: DefinedTypeNode[]): string {
     switch (typeNode.kind) {
         case 'numberTypeNode': {
             const numberFormat = (typeNode as NumberTypeNode).format;
@@ -232,41 +242,43 @@ export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string
         case 'publicKeyTypeNode':
             return '@BPublicKey()';
         case 'fixedSizeTypeNode': {
-            const fixedNode = typeNode as FixedSizeTypeNode;
-            const resolvedType = resolveNestedTypeNode(fixedNode.type);
+            const resolvedType = resolveNestedTypeNode(typeNode.type);
 
             if (resolvedType.kind === 'bytesTypeNode') {
-                return `@BFixedBytes(${fixedNode.size})`;
+                return `@BFixedBytes(${typeNode.size})`;
             }
 
-            const innerAnnotation = getBorshAnnotation(resolvedType, nameApi);
-            return `@BFixedArray(${fixedNode.size}, ${innerAnnotation.replace('@', '')})`;
+            const innerAnnotation = getBorshAnnotation(resolvedType, nameApi, allDefinedTypes);
+            return `@BFixedArray(${typeNode.size}, ${stripAnnotationPrefix(innerAnnotation)})`;
         }
         case 'arrayTypeNode': {
-            const arrayNode = typeNode as ArrayTypeNode;
-            const arrayInnerAnnotation = getBorshAnnotation(arrayNode.item, nameApi);
+            const arrayInnerAnnotation = getBorshAnnotation(typeNode.item, nameApi, allDefinedTypes);
 
-            if (arrayNode.count && arrayNode.count.kind === 'fixedCountNode') {
-                const size = arrayNode.count.value;
-                return `@BFixedArray(${size}, ${arrayInnerAnnotation.replace('@', '')})`;
+            if (typeNode.count && typeNode.count.kind === 'fixedCountNode') {
+                const size = typeNode.count.value;
+                return `@BFixedArray(${size}, ${stripAnnotationPrefix(arrayInnerAnnotation)})`;
             }
 
-            return `@BArray(${arrayInnerAnnotation.replace('@', '')})`;
+            return `@BArray(${stripAnnotationPrefix(arrayInnerAnnotation)})`;
         }
         case 'optionTypeNode': {
-            const optionNode = typeNode as OptionTypeNode;
-            const optionResolvedType = resolveNestedTypeNode(optionNode.item);
-            const optionInnerAnnotation = getBorshAnnotation(optionResolvedType, nameApi);
-            return `@BOption(${optionInnerAnnotation.replace('@', '')})`;
+            const optionResolvedType = resolveNestedTypeNode(typeNode.item);
+            const optionInnerAnnotation = getBorshAnnotation(optionResolvedType, nameApi, allDefinedTypes);
+            return `@BOption(${stripAnnotationPrefix(optionInnerAnnotation)})`;
         }
         case 'definedTypeLinkNode': {
-            const definedTypeNode = typeNode as DefinedTypeLinkNode;
-            const className = nameApi.definedType(definedTypeNode.name);
+            const className = nameApi.definedType(typeNode.name);
+
+            const resolvedType = allDefinedTypes.find(dt => dt.name === typeNode.name);
+            if (resolvedType && resolvedType.type.kind === 'enumTypeNode') {
+                const variants = resolvedType.type.variants || [];
+                return getBEnumAnnotation(className, variants, nameApi);
+            }
+
             return `@B${className}()`;
         }
         case 'sizePrefixTypeNode': {
-            const sizePrefixNode = typeNode as SizePrefixTypeNode;
-            const resolvedType = resolveNestedTypeNode(sizePrefixNode.type);
+            const resolvedType = resolveNestedTypeNode(typeNode.type);
 
             if (resolvedType.kind === 'bytesTypeNode') {
                 return '@BBytes()';
@@ -279,22 +291,44 @@ export function getBorshAnnotation(typeNode: TypeNode, nameApi: NameApi): string
     }
 }
 
-function getDefinedTypeLinkTypeInfo(node: DefinedTypeLinkNode, className: string): TypeInfo {
-    // Generate import path for the custom type
-    const importPath = `${TYPES_IMPORT_PREFIX}${node.name}.dart`;
+function getDefinedTypeLinkTypeInfo(
+    node: DefinedTypeLinkNode,
+    className: string,
+    allDefinedTypes: DefinedTypeNode[],
+): TypeInfo {
+    const imports: string[] = [];
+    const libName = 'lib';
+    const typeDefinition = allDefinedTypes.find(dt => dt.name === node.name);
+    if (typeDefinition && typeDefinition.type.kind === 'enumTypeNode') {
+        const enumName = camelCase(node.name);
+        const enumType = typeDefinition.type as EnumTypeNode;
+        const variants = enumType.variants || [];
 
+        imports.push(`package:${libName}/types/${enumName}/${enumName}.dart`);
+
+        variants.forEach((variant: EnumVariantTypeNode) => {
+            const variantFileName = camelCase(variant.name);
+            imports.push(`package:${libName}/types/${enumName}/${variantFileName}.dart`);
+        });
+
+        return {
+            dartType: className,
+            defaultValue: `${className}()`,
+            imports,
+        };
+    }
+
+    const importPath = `package:${libName}/types/${node.name}.dart`;
     return {
         dartType: className,
-        defaultValue: `${className}()`, // Assumes a default constructor
+        defaultValue: `${className}()`,
         imports: [importPath],
     };
 }
 
 function getSizePrefixTypeInfo(node: SizePrefixTypeNode): TypeInfo {
-    // Resolve the nested type to see what we're prefixing
     const resolvedType = resolveNestedTypeNode(node.type);
 
-    // If it's bytes, return Uint8List
     if (resolvedType.kind === 'bytesTypeNode') {
         return {
             dartType: 'Uint8List',
@@ -303,7 +337,6 @@ function getSizePrefixTypeInfo(node: SizePrefixTypeNode): TypeInfo {
         };
     }
 
-    // For other size-prefixed types, default to String (like prefixed strings)
     return {
         dartType: 'String',
         defaultValue: "''",
