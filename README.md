@@ -42,9 +42,9 @@ pnpm install @limechain/renderers-dart
                 "args": [
                     "generated",
                     {
-                        "libraryName": "myProject",
                         "deleteFolderBeforeRendering": true,
-                        "formatCode": true
+                        "formatCode": true,
+                        "generateBorsh": true
                     }
                 ]
             }
@@ -53,15 +53,13 @@ pnpm install @limechain/renderers-dart
 }
 ```
 
-An object can be passed as a second argument to further configure the renderer. See the [Options](#options) section below for more details.
-
 ### 3.2. Run code generation
 
 ```sh
 pnpm codama run dart
 ```
 
-### 3.3. Run Dart Borsh code generation
+### 3.3. (Only if `generateBorsh` is set to `false`) Run Dart Borsh code generation
 
 ```sh
   cd generated
@@ -102,11 +100,10 @@ lib/
 
 The `renderVisitor` accepts the following options.
 
-| Name                          | Type     | Default | Description                                                     |
-| ----------------------------- | -------- | ------- | --------------------------------------------------------------- |
-| `libraryName`                 | `string` | `'lib'` | The name of the generated Dart library.                         |
-| `outputDirectory`             | `string` | `'lib'` | The directory where generated files will be placed.             |
-| `deleteFolderBeforeRendering` | `bool`   | `true`  | Flag for deleting the output folder before generating it again. |
-| `formatCode`                  | `bool`   | `true`  | Flag for formatting the Dart code after generation              |
+| Name                          | Type   | Default | Description                                                     |
+| ----------------------------- | ------ | ------- | --------------------------------------------------------------- |
+| `deleteFolderBeforeRendering` | `bool` | `true`  | Flag for deleting the output folder before generating it again. |
+| `formatCode`                  | `bool` | `true`  | Flag for formatting the Dart code after generation              |
+| `generateBorsh`               | `bool` | `true`  | Flag for running Borsh code generation after rendering          |
 
 <hr/>

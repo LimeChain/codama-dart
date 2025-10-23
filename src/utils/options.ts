@@ -1,3 +1,5 @@
+import { DefinedTypeNode } from '@codama/nodes';
+
 import { NameApi } from './nameTransformers';
 
 export type RenderOptions = GetRenderMapOptions & {
@@ -7,13 +9,10 @@ export type RenderOptions = GetRenderMapOptions & {
 };
 
 export type GetRenderMapOptions = {
-    libraryName?: string;
     nameTransformers?: Partial<import('./nameTransformers').NameTransformers>;
-    outputDirectory: string;
 };
 
 export type RenderScope = {
-    libraryName: string;
+    definedTypes: DefinedTypeNode[];
     nameApi: NameApi;
-    outputDirectory: string;
 };

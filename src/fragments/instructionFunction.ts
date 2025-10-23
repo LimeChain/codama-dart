@@ -209,7 +209,5 @@ ${asyncModifier}Instruction${asyncSuffix} ${functionName}(${parameterList}) ${as
 ${functionBody}
 }`;
 
-    const imports = new Set(['package:solana/solana.dart']);
-
-    return createFragment(content, Array.from(imports));
+    return createFragment(content);
 }

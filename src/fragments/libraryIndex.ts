@@ -1,4 +1,4 @@
-import { getAllInstructionsWithSubs, getAllPrograms, RootNode } from '@codama/nodes';
+import { camelCase, getAllInstructionsWithSubs, getAllPrograms, RootNode } from '@codama/nodes';
 
 import { Fragment } from '../utils';
 
@@ -7,19 +7,15 @@ export function getLibraryIndexFragment(scope: { rootNode: RootNode }): Fragment
 
     const programs = getAllPrograms(rootNode);
     const exports: string[] = [];
-
     programs.forEach(program => {
-        // Export accounts
         program.accounts.forEach(account => {
             exports.push(`export 'accounts/${account.name}.dart';`);
         });
 
-        // Export instructions
         const instructions = getAllInstructionsWithSubs(program, { leavesOnly: true });
         instructions.forEach(instruction => {
             exports.push(`export 'instructions/${instruction.name}.dart';`);
-            
-            // Export PDAs from instruction accounts
+
             instruction.accounts.forEach(account => {
                 if (account.defaultValue?.kind === 'pdaValueNode') {
                     exports.push(`export 'pdas/${account.name}.dart';`);
@@ -27,19 +23,26 @@ export function getLibraryIndexFragment(scope: { rootNode: RootNode }): Fragment
             });
         });
 
-        // Export defined types
         program.definedTypes.forEach(type => {
             if (type.type.kind === 'structTypeNode') {
                 exports.push(`export 'types/${type.name}.dart';`);
+            } else if (type.type.kind === 'enumTypeNode') {
+                const enumName = camelCase(type.name);
+                exports.push(`export 'types/${enumName}/${enumName}.dart';`);
+
+                const enumType = type.type;
+                const variants = enumType.variants || [];
+                variants.forEach(variant => {
+                    const variantName = camelCase(variant.name);
+                    exports.push(`export 'types/${enumName}/${variantName}.dart';`);
+                });
             }
         });
 
-        // Export errors
         if (program.errors.length > 0) {
             exports.push(`export 'errors/${program.name}.dart';`);
         }
 
-        // Export programs
         if (program.name) {
             exports.push(`export 'programs/${program.name}.dart';`);
         }

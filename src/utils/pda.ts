@@ -56,10 +56,7 @@ export function createInlinePdaFile(
     pdaSeedValues: PdaSeedValueNode[] | undefined,
     nameApi: RenderScope['nameApi'],
     programPublicKey: string | undefined,
-    asPage: <TFragment extends Fragment | undefined>(
-        fragment: TFragment,
-        pageOptions?: { libraryName?: string },
-    ) => TFragment,
+    asPage: <TFragment extends Fragment | undefined>(fragment: TFragment) => TFragment,
 ): Fragment | undefined {
     const functionName = `derive${accountName.charAt(0).toUpperCase() + accountName.slice(1)}Pda`;
     const seeds = generatePdaSeeds(pdaNode, pdaSeedValues, nameApi);

@@ -3,7 +3,7 @@ import { camelCase, StructTypeNode } from '@codama/nodes';
 import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, RenderScope } from '../utils';
 
 export function getStructTypeFragment(
-    scope: Pick<RenderScope, 'nameApi'> & {
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi'> & {
         name: string;
         node: StructTypeNode;
         size: number | null;
@@ -13,19 +13,15 @@ export function getStructTypeFragment(
     const className = nameApi.definedType(camelCase(name));
     const fields = node.fields || [];
 
-
-    // Collect all imports
     const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
-    fields.forEach(field => {
-        const typeInfo = getTypeInfo(field.type, scope.nameApi);
-        typeInfo.imports.forEach(imp => allImports.add(imp));
-    });
-
     const factoryParams = fields
         .map(field => {
-            const typeInfo = getTypeInfo(field.type, scope.nameApi);
-            const borshAnnotation = getBorshAnnotation(field.type, scope.nameApi);
+            const typeInfo = getTypeInfo(field.type, nameApi, scope.definedTypes);
+            const borshAnnotation = getBorshAnnotation(field.type, nameApi, scope.definedTypes);
             const fieldName = nameApi.accountField(field.name);
+
+            typeInfo.imports.forEach(imp => allImports.add(imp));
+
             return `    ${borshAnnotation} required ${typeInfo.dartType} ${fieldName},`;
         })
         .join('\n');
@@ -37,7 +33,6 @@ class ${className} with _$${className} {
   factory ${className}({
 ${factoryParams}
   }) = _${className};
-  
 
   const ${className}._();
 

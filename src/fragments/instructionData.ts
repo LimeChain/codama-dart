@@ -1,5 +1,5 @@
 import { InstructionNode, isNode, structTypeNodeFromInstructionArgumentNodes } from '@codama/nodes';
-import { getLastNodeFromPath, NodePath } from '@codama/visitors-core';
+import { findProgramNodeFromPath, getLastNodeFromPath, NodePath } from '@codama/visitors-core';
 
 import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, RenderScope } from '../utils';
 
@@ -17,18 +17,29 @@ export function getInstructionDataFragment(
     const instructionDataName = nameApi.instructionDataType(instructionNode.name);
     const structNode = structTypeNodeFromInstructionArgumentNodes(instructionNode.arguments);
 
-    const factoryParams = structNode.fields
-        .filter(field => field.name !== 'discriminator') // Exclude discriminator field
+    const programNode = findProgramNodeFromPath(instructionPath);
+    const programDefinedTypes = programNode?.definedTypes || [];
+
+    const allImports = new Set([
+        'package:borsh_annotation_extended/borsh_annotation_extended.dart',
+        'package:solana/encoder.dart',
+    ]);
+
+    const nonDiscriminatorFields = structNode.fields.filter(field => field.name !== 'discriminator');
+
+    const factoryParams = nonDiscriminatorFields
         .map(field => {
-            const typeInfo = getTypeInfo(field.type, nameApi);
-            const borshAnnotation = getBorshAnnotation(field.type, nameApi);
+            const typeInfo = getTypeInfo(field.type, nameApi, programDefinedTypes);
+            const borshAnnotation = getBorshAnnotation(field.type, nameApi, programDefinedTypes);
             const fieldName = nameApi.instructionField(field.name);
+
+            typeInfo.imports.forEach(imp => allImports.add(imp));
+
             return `    ${borshAnnotation} required ${typeInfo.dartType} ${fieldName},`;
         })
         .join('\n');
 
-    const validations = structNode.fields
-        .filter(field => field.name !== 'discriminator')
+    const validations = nonDiscriminatorFields
         .map(field => {
             const fieldName = nameApi.instructionField(field.name);
 
@@ -55,16 +66,6 @@ export function getInstructionDataFragment(
         ? `    if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got \${discriminator.length}');\n${validations}`
         : `    if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got \${discriminator.length}');`;
 
-    const allImports = new Set([
-        'package:borsh_annotation_extended/borsh_annotation_extended.dart',
-        'package:solana/solana.dart',
-        'package:solana/encoder.dart',
-    ]);
-    structNode.fields.forEach(field => {
-        const typeInfo = getTypeInfo(field.type, nameApi);
-        typeInfo.imports.forEach(imp => allImports.add(imp));
-    });
-
     const discriminatorBytes = (() => {
         const data = instructionNode.arguments.find(arg => arg.name === 'discriminator')?.defaultValue;
         return data && isNode(data, 'bytesValueNode')
@@ -87,8 +88,7 @@ ${allParams}
 ${allValidations}
     return _${instructionDataName}(
       discriminator: discriminator,
-${structNode.fields
-    .filter(field => field.name !== 'discriminator')
+${nonDiscriminatorFields
     .map(field => {
         const fieldName = nameApi.instructionField(field.name);
         return `      ${fieldName}: ${fieldName},`;
