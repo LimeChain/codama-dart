@@ -1,45 +1,33 @@
-// import { definedTypeNode, numberTypeNode, structFieldTypeNode, structTypeNode } from '@codama/nodes';
+import { arrayTypeNode, definedTypeNode, numberTypeNode, prefixedCountNode, publicKeyTypeNode } from '@codama/nodes';
 // import { getFromRenderMap } from '@codama/renderers-core';
-// import { visit } from '@codama/visitors-core';
-// import { test } from 'vitest';
+import { visit } from '@codama/visitors-core';
+import { test } from 'vitest';
 
-// import { getRenderMapVisitor } from '../../src';
+import { DEFAULT_NAME_TRANSFORMERS, GetRenderMapOptions, getRenderMapVisitor } from '../../src';
 // import { codeContains, codeDoesNotContains } from '../_setup';
 
-// test('it exports short u16 numbers', () => {
-//     // Given a shortU16 number.
-//     const node = definedTypeNode({
-//         name: 'myShortU16',
-//         type: numberTypeNode('shortU16'),
-//     });
+test('it exports short vecs', () => {
+    // Given a shortU16 number.
+    const node = definedTypeNode({
+        name: 'myShortVec',
+        type: arrayTypeNode(publicKeyTypeNode(), prefixedCountNode(numberTypeNode('shortU16'))),
+    });
 
-//     // When we render the number.
-//     const renderMap = visit(node, getRenderMapVisitor());
+    const options: GetRenderMapOptions = {
+        nameTransformers: DEFAULT_NAME_TRANSFORMERS,
+    };
 
-//     // Then we expect a short u16 to be exported.
-//     codeContains(getFromRenderMap(renderMap, 'types/my_short_u16.rs'), [
-//         /pub type MyShortU16 = ShortU16/,
-//         /use solana_short_vec::ShortU16/,
-//     ]);
-//     codeDoesNotContains(getFromRenderMap(renderMap, 'types/my_short_u16.rs'), [
-//         /use borsh::BorshSerialize/,
-//         /use borsh::BorshDeserialize/,
-//     ]);
-// });
+    // When we render the number.
+    const renderMap = visit(node, getRenderMapVisitor(options));
+    console.log(renderMap);
 
-// test('it exports short u16 numbers as struct fields', () => {
-//     // Given a shortU16 number.
-//     const node = definedTypeNode({
-//         name: 'myShortU16',
-//         type: structTypeNode([structFieldTypeNode({ name: 'value', type: numberTypeNode('shortU16') })]),
-//     });
-
-//     // When we render the number.
-//     const renderMap = visit(node, getRenderMapVisitor());
-
-//     // Then we expect a short u16 to be exported as a struct field.
-//     codeContains(getFromRenderMap(renderMap, 'types/my_short_u16.rs'), [
-//         /pub value: ShortU16/,
-//         /use solana_short_vec::ShortU16/,
-//     ]);
-// });
+    // Then we expect a short u16 to be exported.
+    // codeContains(getFromRenderMap(renderMap, 'types/my_short_u16.rs'), [
+    //     /pub type MyShortU16 = ShortU16/,
+    //     /use solana_short_vec::ShortU16/,
+    // ]);
+    // codeDoesNotContains(getFromRenderMap(renderMap, 'types/my_short_u16.rs'), [
+    //     /use borsh::BorshSerialize/,
+    //     /use borsh::BorshDeserialize/,
+    // ]);
+});
