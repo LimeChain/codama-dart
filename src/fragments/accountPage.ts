@@ -22,12 +22,9 @@ export function getAccountPageFragment(
         return getStructAccountFragment(node, scope, className);
     }
 
-    const typeInfo = getTypeInfo(dataTypeNode, scope.nameApi);
-    const borshAnnotation = getBorshAnnotation(dataTypeNode, scope.nameApi);
-    const allImports = [
-        'package:borsh_annotation_extended/borsh_annotation_extended.dart',
-        ...typeInfo.imports,
-    ];
+    const typeInfo = getTypeInfo(dataTypeNode, scope.nameApi, programNode.definedTypes);
+    const borshAnnotation = getBorshAnnotation(dataTypeNode, scope.nameApi, programNode.definedTypes);
+    const allImports = ['package:borsh_annotation_extended/borsh_annotation_extended.dart', ...typeInfo.imports];
 
     const content = `part '${node.name}.g.dart';
 
@@ -68,20 +65,21 @@ function getStructAccountFragment(
     const dataTypeNode = resolveNestedTypeNode(node.data);
     const fields = isNode(dataTypeNode, 'structTypeNode') ? dataTypeNode.fields : [];
 
+    const programNode = findProgramNodeFromPath(scope.accountPath);
+    const programDefinedTypes = programNode?.definedTypes || [];
+
+    const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
     const factoryParams = fields
         .map(field => {
-            const typeInfo = getTypeInfo(field.type, scope.nameApi);
-            const borshAnnotation = getBorshAnnotation(field.type, scope.nameApi);
+            const typeInfo = getTypeInfo(field.type, scope.nameApi, programDefinedTypes);
+            const borshAnnotation = getBorshAnnotation(field.type, scope.nameApi, programDefinedTypes);
             const fieldName = scope.nameApi.accountField(field.name);
+
+            typeInfo.imports.forEach(imp => allImports.add(imp));
+
             return `    ${borshAnnotation} required ${typeInfo.dartType} ${fieldName},`;
         })
         .join('\n');
-
-    const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
-    fields.forEach(field => {
-        const typeInfo = getTypeInfo(field.type, scope.nameApi);
-        typeInfo.imports.forEach(imp => allImports.add(imp));
-    });
 
     const content = `part '${node.name}.g.dart';
 

@@ -57,10 +57,7 @@ export function createInlinePdaFile(
     nameApi: RenderScope['nameApi'],
     programPublicKey: string | undefined,
     programName: string | undefined,
-    asPage: <TFragment extends Fragment | undefined>(
-        fragment: TFragment,
-        pageOptions?: { libraryName?: string },
-    ) => TFragment,
+    asPage: <TFragment extends Fragment | undefined>(fragment: TFragment) => TFragment,
 ): Fragment | undefined {
     const functionName = `derive${accountName.charAt(0).toUpperCase() + accountName.slice(1)}Pda`;
     const seeds = generatePdaSeeds(pdaNode, pdaSeedValues, nameApi);
@@ -70,7 +67,6 @@ export function createInlinePdaFile(
     if (programName) {
         programClassName = nameApi.programType(programName as CamelCaseString);
     }
-
 
     pdaNode.seeds.forEach(seed => {
         if (isNode(seed, 'variablePdaSeedNode')) {
@@ -88,8 +84,8 @@ export function createInlinePdaFile(
         programClassName && programClassName !== ''
             ? `Ed25519HDPublicKey.fromBase58(${programClassName}.programId)`
             : programPublicKey
-            ? `Ed25519HDPublicKey.fromBase58('${programPublicKey}')`
-            : 'PROGRAM_ID_HERE';
+              ? `Ed25519HDPublicKey.fromBase58('${programPublicKey}')`
+              : 'PROGRAM_ID_HERE';
 
     const content = `/// Returns the PDA address for ${accountName}
 Future<Ed25519HDPublicKey> ${functionName}(${parameterList}) async {
