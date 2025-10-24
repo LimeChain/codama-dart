@@ -4,7 +4,7 @@ import { findProgramNodeFromPath, getLastNodeFromPath, NodePath } from '@codama/
 import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, RenderScope } from '../utils';
 
 export function getAccountPageFragment(
-    scope: Pick<RenderScope, 'nameApi'> & {
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         accountPath: NodePath<AccountNode>;
         size: number | null;
     },
@@ -22,7 +22,7 @@ export function getAccountPageFragment(
         return getStructAccountFragment(node, scope, className);
     }
 
-    const typeInfo = getTypeInfo(dataTypeNode, scope.nameApi, programNode.definedTypes);
+    const typeInfo = getTypeInfo(dataTypeNode, { ...scope, definedTypes: programNode.definedTypes });
     const borshAnnotation = getBorshAnnotation(dataTypeNode, scope.nameApi, programNode.definedTypes);
     const allImports = ['package:borsh_annotation_extended/borsh_annotation_extended.dart', ...typeInfo.imports];
 
@@ -56,7 +56,7 @@ class ${className} with _$${className} {
 
 function getStructAccountFragment(
     node: AccountNode,
-    scope: Pick<RenderScope, 'nameApi'> & {
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         accountPath: NodePath<AccountNode>;
         size: number | null;
     },
@@ -71,7 +71,7 @@ function getStructAccountFragment(
     const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
     const factoryParams = fields
         .map(field => {
-            const typeInfo = getTypeInfo(field.type, scope.nameApi, programDefinedTypes);
+            const typeInfo = getTypeInfo(field.type, { ...scope, definedTypes: programDefinedTypes });
             const borshAnnotation = getBorshAnnotation(field.type, scope.nameApi, programDefinedTypes);
             const fieldName = scope.nameApi.accountField(field.name);
 

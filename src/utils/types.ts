@@ -16,6 +16,7 @@ import {
 
 import { getBEnumAnnotation } from '../fragments/enumType';
 import { NameApi } from './nameTransformers';
+import { RenderScope } from './options';
 
 // Constants for hardcoded values
 const DEFAULT_PUBLIC_KEY = '11111111111111111111111111111111';
@@ -28,7 +29,7 @@ export interface TypeInfo {
     serializationSize?: number;
 }
 
-export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi, allDefinedTypes: DefinedTypeNode[]): TypeInfo {
+export function getTypeInfo(typeNode: TypeNode, scope: RenderScope): TypeInfo {
     switch (typeNode.kind) {
         case 'numberTypeNode':
             return getNumberTypeInfo(typeNode);
@@ -39,17 +40,23 @@ export function getTypeInfo(typeNode: TypeNode, nameApi: NameApi, allDefinedType
         case 'bytesTypeNode':
             return getBytesTypeInfo();
         case 'arrayTypeNode':
-            return getArrayTypeInfo(typeNode, nameApi, allDefinedTypes);
+            return getArrayTypeInfo(typeNode, scope);
         case 'optionTypeNode':
-            return getOptionTypeInfo(typeNode, nameApi, allDefinedTypes);
+            return getOptionTypeInfo(typeNode, scope);
         case 'publicKeyTypeNode':
             return getPublicKeyTypeInfo();
         case 'fixedSizeTypeNode':
-            return getFixedSizeTypeInfo(typeNode, nameApi, allDefinedTypes);
+            return getFixedSizeTypeInfo(typeNode, scope);
         case 'solAmountTypeNode':
             return getAmountTypeInfo();
         case 'definedTypeLinkNode':
-            return getDefinedTypeLinkTypeInfo(typeNode, nameApi.definedType(typeNode.name), allDefinedTypes);
+            return getDefinedTypeLinkTypeInfo(
+                typeNode,
+                scope.nameApi.definedType(typeNode.name),
+                scope.definedTypes,
+                scope.packageName,
+                scope.programName,
+            );
         case 'sizePrefixTypeNode':
             return getSizePrefixTypeInfo(typeNode);
         default:
@@ -119,14 +126,9 @@ function getBytesTypeInfo(): TypeInfo {
     };
 }
 
-function getArrayTypeInfo(
-    node: ArrayTypeNode,
-    nameApi: NameApi,
-
-    allDefinedTypes: DefinedTypeNode[],
-): TypeInfo {
+function getArrayTypeInfo(node: ArrayTypeNode, scope: RenderScope): TypeInfo {
     const resolvedType = resolveNestedTypeNode(node.item);
-    const innerTypeInfo = getTypeInfo(resolvedType, nameApi, allDefinedTypes);
+    const innerTypeInfo = getTypeInfo(resolvedType, scope);
 
     if (node.count && node.count.kind === 'fixedCountNode') {
         const size = node.count.value;
@@ -145,9 +147,9 @@ function getArrayTypeInfo(
     };
 }
 
-function getOptionTypeInfo(node: OptionTypeNode, nameApi: NameApi, allDefinedTypes: DefinedTypeNode[]): TypeInfo {
+function getOptionTypeInfo(node: OptionTypeNode, scope: RenderScope): TypeInfo {
     const resolvedType = resolveNestedTypeNode(node.item);
-    const innerTypeInfo = getTypeInfo(resolvedType, nameApi, allDefinedTypes);
+    const innerTypeInfo = getTypeInfo(resolvedType, scope);
 
     return {
         dartType: `${innerTypeInfo.dartType}?`,
@@ -165,7 +167,7 @@ function getPublicKeyTypeInfo(): TypeInfo {
     };
 }
 
-function getFixedSizeTypeInfo(node: FixedSizeTypeNode, nameApi: NameApi, allDefinedTypes: DefinedTypeNode[]): TypeInfo {
+function getFixedSizeTypeInfo(node: FixedSizeTypeNode, scope: RenderScope): TypeInfo {
     const resolvedType = resolveNestedTypeNode(node.type);
 
     if (resolvedType.kind === 'bytesTypeNode') {
@@ -177,7 +179,7 @@ function getFixedSizeTypeInfo(node: FixedSizeTypeNode, nameApi: NameApi, allDefi
         };
     }
 
-    const innerTypeInfo = getTypeInfo(resolvedType, nameApi, allDefinedTypes);
+    const innerTypeInfo = getTypeInfo(resolvedType, scope);
 
     return {
         dartType: `List<${innerTypeInfo.dartType}>`,
@@ -295,20 +297,21 @@ function getDefinedTypeLinkTypeInfo(
     node: DefinedTypeLinkNode,
     className: string,
     allDefinedTypes: DefinedTypeNode[],
+    packageName: string,
+    programName: string,
 ): TypeInfo {
     const imports: string[] = [];
-    const libName = 'lib';
     const typeDefinition = allDefinedTypes.find(dt => dt.name === node.name);
     if (typeDefinition && typeDefinition.type.kind === 'enumTypeNode') {
         const enumName = camelCase(node.name);
         const enumType = typeDefinition.type as EnumTypeNode;
         const variants = enumType.variants || [];
 
-        imports.push(`package:${libName}/types/${enumName}/${enumName}.dart`);
+        imports.push(`package:${packageName}/${programName}/types/${enumName}/${enumName}.dart`);
 
         variants.forEach((variant: EnumVariantTypeNode) => {
             const variantFileName = camelCase(variant.name);
-            imports.push(`package:${libName}/types/${enumName}/${variantFileName}.dart`);
+            imports.push(`package:${packageName}/${programName}/types/${enumName}/${variantFileName}.dart`);
         });
 
         return {
@@ -318,7 +321,7 @@ function getDefinedTypeLinkTypeInfo(
         };
     }
 
-    const importPath = `package:${libName}/types/${node.name}.dart`;
+    const importPath = `package:${packageName}/${programName}/types/${node.name}.dart`;
     return {
         dartType: className,
         defaultValue: `${className}()`,

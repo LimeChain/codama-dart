@@ -15,4 +15,6 @@ export type GetRenderMapOptions = {
 export type RenderScope = {
     definedTypes: DefinedTypeNode[];
     nameApi: NameApi;
+    packageName: string;
+    programName: string;
 };
