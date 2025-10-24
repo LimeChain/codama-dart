@@ -107,6 +107,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions) {
                         }
 
                         const pdaName = camelCase(account.name);
+                        const programNode = findProgramNodeFromPath(stack.getPath('instructionNode'));
 
                         // Avoid duplicate PDA files for the same account name
                         if (!pdaRenderMaps.has(pdaName)) {
@@ -115,7 +116,8 @@ export function getRenderMapVisitor(options: GetRenderMapOptions) {
                                 account.defaultValue.pda,
                                 account.defaultValue.seeds,
                                 renderScope.nameApi,
-                                findProgramNodeFromPath(stack.getPath('instructionNode'))?.publicKey,
+                                programNode?.publicKey,
+                                programNode?.name,
                                 asPage,
                             );
                             if (pdaFile) {

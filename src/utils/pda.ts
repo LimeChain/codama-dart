@@ -1,4 +1,4 @@
-import { isNode, PdaNode, PdaSeedValueNode, StandaloneValueNode } from '@codama/nodes';
+import { CamelCaseString, isNode, PdaNode, PdaSeedValueNode, StandaloneValueNode } from '@codama/nodes';
 
 import { Fragment } from './fragment';
 import { RenderScope } from './options';
@@ -56,6 +56,7 @@ export function createInlinePdaFile(
     pdaSeedValues: PdaSeedValueNode[] | undefined,
     nameApi: RenderScope['nameApi'],
     programPublicKey: string | undefined,
+    programName: string | undefined,
     asPage: <TFragment extends Fragment | undefined>(
         fragment: TFragment,
         pageOptions?: { libraryName?: string },
@@ -65,6 +66,11 @@ export function createInlinePdaFile(
     const seeds = generatePdaSeeds(pdaNode, pdaSeedValues, nameApi);
 
     const parameters: string[] = [];
+    let programClassName: string = '';
+    if (programName) {
+        programClassName = nameApi.programType(programName as CamelCaseString);
+    }
+
 
     pdaNode.seeds.forEach(seed => {
         if (isNode(seed, 'variablePdaSeedNode')) {
@@ -78,9 +84,12 @@ export function createInlinePdaFile(
     });
 
     const parameterList = parameters.length > 0 ? parameters.join(', ') : '';
-    const programIdValue = programPublicKey
-        ? `Ed25519HDPublicKey.fromBase58('${programPublicKey}')`
-        : 'PROGRAM_ID_HERE';
+    const programIdValue =
+        programClassName && programClassName !== ''
+            ? `Ed25519HDPublicKey.fromBase58(${programClassName}.programId)`
+            : programPublicKey
+            ? `Ed25519HDPublicKey.fromBase58('${programPublicKey}')`
+            : 'PROGRAM_ID_HERE';
 
     const content = `/// Returns the PDA address for ${accountName}
 Future<Ed25519HDPublicKey> ${functionName}(${parameterList}) async {
@@ -91,6 +100,9 @@ Future<Ed25519HDPublicKey> ${functionName}(${parameterList}) async {
 }`;
 
     const imports = new Set(['package:solana/solana.dart', 'dart:typed_data']);
+    if (programClassName) {
+        imports.add(`../programs/${programName}.dart`);
+    }
 
     const fragment: Fragment = {
         content,

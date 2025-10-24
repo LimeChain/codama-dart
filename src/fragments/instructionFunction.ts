@@ -15,6 +15,14 @@ export function getInstructionFunctionFragment(
     const instructionNode = getLastNodeFromPath(instructionPath);
     const programNode = findProgramNodeFromPath(instructionPath)!;
 
+    const rootNode = instructionPath.find(node => node.kind === 'rootNode');
+    let rootProgramClassName: string;
+    if (rootNode) {
+        rootProgramClassName = `${nameApi.programType(rootNode.program.name)}.programId`;
+    } else {
+        rootProgramClassName = `'${programNode.publicKey}'`;
+    }
+
     const functionName = nameApi.instructionFunction(instructionNode.name);
     const instructionDataName = nameApi.instructionDataType(instructionNode.name);
 
@@ -107,7 +115,7 @@ export function getInstructionFunctionFragment(
 
                     pdaResolutions.push(
                         `  final resolved${accountName.charAt(0).toUpperCase() + accountName.slice(1)} = ${accountName} ?? ` +
-                            `await Ed25519HDPublicKey.findProgramAddress(\n    seeds: [${seeds.join(', ')}],\n    programId: programId ?? Ed25519HDPublicKey.fromBase58('${programNode.publicKey ?? 'PROGRAM_ID_HERE'}'),\n  );`,
+                            `await Ed25519HDPublicKey.findProgramAddress(\n    seeds: [${seeds.join(', ')}],\n    programId: programId ?? Ed25519HDPublicKey.fromBase58(${rootProgramClassName}),\n  );`,
                     );
                 }
             } else if (builtinAddress) {
@@ -195,7 +203,7 @@ export function getInstructionFunctionFragment(
 
     const functionBody = `${pdaResolutionCode}${accountMetas}${dataSerializationCode}
   return Instruction(
-    programId: programId ?? Ed25519HDPublicKey.fromBase58('${programNode.publicKey ?? 'PROGRAM_ID_HERE'}'),
+    programId: programId ?? Ed25519HDPublicKey.fromBase58(${rootProgramClassName}),
     accounts: accounts,
     data: instructionData,
   );`;
@@ -210,6 +218,9 @@ ${functionBody}
 }`;
 
     const imports = new Set(['package:solana/solana.dart']);
+    if (rootNode) {
+        imports.add(`../programs/${rootNode.program.name}.dart`);
+    }
 
     return createFragment(content, Array.from(imports));
 }
