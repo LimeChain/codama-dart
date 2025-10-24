@@ -57,6 +57,7 @@ export function createInlinePdaFile(
     nameApi: RenderScope['nameApi'],
     programPublicKey: string | undefined,
     programName: string | undefined,
+    packageName: string,
     asPage: <TFragment extends Fragment | undefined>(fragment: TFragment) => TFragment,
 ): Fragment | undefined {
     const functionName = `derive${accountName.charAt(0).toUpperCase() + accountName.slice(1)}Pda`;
@@ -95,9 +96,9 @@ Future<Ed25519HDPublicKey> ${functionName}(${parameterList}) async {
   );
 }`;
 
-    const imports = new Set(['package:solana/solana.dart', 'dart:typed_data']);
+    const imports = new Set(['dart:typed_data', 'package:borsh_annotation_extended/borsh_annotation_extended.dart']);
     if (programClassName) {
-        imports.add(`../programs/${programName}.dart`);
+        imports.add(`package:${packageName}/${programName}/programs/${programName}.dart`);
     }
 
     const fragment: Fragment = {

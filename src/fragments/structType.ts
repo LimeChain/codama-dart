@@ -6,7 +6,6 @@ export function getStructTypeFragment(
     scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         name: string;
         node: StructTypeNode;
-        size: number | null;
     },
 ): Fragment {
     const { name, node, nameApi } = scope;

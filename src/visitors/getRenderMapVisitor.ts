@@ -11,7 +11,6 @@ import { createRenderMap, mergeRenderMaps } from '@codama/renderers-core';
 import {
     extendVisitor,
     findProgramNodeFromPath,
-    getByteSizeVisitor,
     LinkableDictionary,
     NodeStack,
     pipe,
@@ -34,11 +33,14 @@ import {
 import { Fragment, generatePubspec, getNameApi, getPageFragment, GetRenderMapOptions, RenderScope } from '../utils';
 import { createInlinePdaFile } from '../utils/pda';
 
-export function getRenderMapVisitor(options: GetRenderMapOptions, packageName: string, programName: string) {
+export function getRenderMapVisitor(
+    options: GetRenderMapOptions,
+    packageName: string,
+    programName: string,
+    programPublicKey: string,
+) {
     const linkables = new LinkableDictionary();
     const stack = new NodeStack();
-
-    const byteSizeVisitor = getByteSizeVisitor(linkables, { stack });
 
     const getProgramDefinedTypes = (): DefinedTypeNode[] => {
         try {
@@ -149,14 +151,12 @@ export function getRenderMapVisitor(options: GetRenderMapOptions, packageName: s
         v =>
             extendVisitor(v, {
                 visitAccount(node) {
-                    const size = visit(node, byteSizeVisitor);
                     return createRenderMap(
                         `lib/${programName}/accounts/${camelCase(node.name)}.dart`,
                         asPage(
                             getAccountPageFragment({
                                 ...renderScope,
                                 accountPath: stack.getPath('accountNode'),
-                                size,
                             }),
                         ),
                     );
@@ -174,7 +174,6 @@ export function getRenderMapVisitor(options: GetRenderMapOptions, packageName: s
                                     definedTypes: programDefinedTypes,
                                     name: node.name,
                                     node: node.type,
-                                    size: visit(node, byteSizeVisitor),
                                 }),
                             ),
                         );
@@ -191,7 +190,6 @@ export function getRenderMapVisitor(options: GetRenderMapOptions, packageName: s
                             getInstructionPageFragment({
                                 ...renderScope,
                                 instructionPath: stack.getPath('instructionNode'),
-                                size: visit(node, byteSizeVisitor),
                             }),
                         ),
                     );
@@ -207,7 +205,6 @@ export function getRenderMapVisitor(options: GetRenderMapOptions, packageName: s
                         }
 
                         const pdaName = camelCase(account.name);
-                        const programNode = findProgramNodeFromPath(stack.getPath('instructionNode'));
 
                         // Avoid duplicate PDA files for the same account name
                         if (!pdaRenderMaps.has(pdaName)) {
@@ -216,8 +213,9 @@ export function getRenderMapVisitor(options: GetRenderMapOptions, packageName: s
                                 account.defaultValue.pda,
                                 account.defaultValue.seeds,
                                 renderScope.nameApi,
-                                programNode?.publicKey,
-                                programNode?.name,
+                                programPublicKey,
+                                programName,
+                                packageName,
                                 asPage,
                             );
                             if (pdaFile) {

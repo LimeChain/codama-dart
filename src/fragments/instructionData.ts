@@ -6,7 +6,6 @@ import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, RenderScope 
 export function getInstructionDataFragment(
     scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         instructionPath: NodePath<InstructionNode>;
-        size: number | null;
     },
 ): Fragment | undefined {
     const { instructionPath, nameApi } = scope;

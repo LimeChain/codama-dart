@@ -8,7 +8,6 @@ import { getInstructionFunctionFragment } from './instructionFunction';
 export function getInstructionPageFragment(
     scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         instructionPath: NodePath<InstructionNode>;
-        size: number | null;
     },
 ): Fragment {
     if (!findProgramNodeFromPath(scope.instructionPath)) {

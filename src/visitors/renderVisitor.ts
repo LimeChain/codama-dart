@@ -13,11 +13,14 @@ export function renderVisitor(path: string, options: RenderOptions) {
         }
 
         const programs = getAllPrograms(root);
-        if (programs.length === 0 || !programs[0].name) {
-            throw Error('Could not find program name');
+        if (programs.length === 0 || !programs[0].name || !programs[0].publicKey) {
+            throw Error('Could not find program');
         }
+
         const programName = camelCase(programs[0].name);
-        const renderMap = visit(root, getRenderMapVisitor(options, path, programName));
+        const programPublicKey = camelCase(programs[0].publicKey);
+
+        const renderMap = visit(root, getRenderMapVisitor(options, path, programName, programPublicKey));
         writeRenderMap(renderMap, path);
 
         if (options.formatCode ?? true) {
