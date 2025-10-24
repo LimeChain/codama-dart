@@ -7,7 +7,7 @@ import { getRenderMapVisitor } from './getRenderMapVisitor';
 
 export function renderVisitor(path: string, options: RenderOptions) {
     return rootNodeVisitor(root => {
-        if (options.deleteFolderBeforeRendering ?? true) {
+        if (options && (options.deleteFolderBeforeRendering ?? true)) {
             deleteDirectory(path);
         }
 
