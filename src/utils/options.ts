@@ -9,7 +9,7 @@ export type RenderOptions = GetRenderMapOptions & {
 };
 
 export type GetRenderMapOptions = {
-    nameTransformers: Partial<import('./nameTransformers').NameTransformers>;
+    nameTransformers?: Partial<import('./nameTransformers').NameTransformers>;
 };
 
 export type RenderScope = {

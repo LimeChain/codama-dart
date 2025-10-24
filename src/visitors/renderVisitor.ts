@@ -2,7 +2,7 @@ import { deleteDirectory, writeRenderMap } from '@codama/renderers-core';
 import { rootNodeVisitor, visit } from '@codama/visitors-core';
 import { execSync } from 'child_process';
 
-import { DEFAULT_NAME_TRANSFORMERS, RenderOptions } from '../utils';
+import { RenderOptions } from '../utils';
 import { getRenderMapVisitor } from './getRenderMapVisitor';
 
 export function renderVisitor(path: string, options: RenderOptions) {
@@ -11,10 +11,7 @@ export function renderVisitor(path: string, options: RenderOptions) {
             deleteDirectory(path);
         }
 
-        const renderMap = visit(root, getRenderMapVisitor({
-            ...options,
-            nameTransformers: options.nameTransformers ?? DEFAULT_NAME_TRANSFORMERS,
-        }));
+        const renderMap = visit(root, getRenderMapVisitor(options));
         writeRenderMap(renderMap, path);
 
         if (options.formatCode ?? true) {

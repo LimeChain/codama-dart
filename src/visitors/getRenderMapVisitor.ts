@@ -31,7 +31,7 @@ import {
     getProgramPageFragment,
     getStructTypeFragment,
 } from '../fragments';
-import { Fragment, generatePubspec, getNameApi, getPageFragment, GetRenderMapOptions, RenderScope } from '../utils';
+import { DEFAULT_NAME_TRANSFORMERS, Fragment, generatePubspec, getNameApi, getPageFragment, GetRenderMapOptions, RenderScope } from '../utils';
 import { createInlinePdaFile } from '../utils/pda';
 
 export function getRenderMapVisitor(options: GetRenderMapOptions) {
@@ -51,7 +51,7 @@ export function getRenderMapVisitor(options: GetRenderMapOptions) {
 
     const renderScope: RenderScope = {
         definedTypes: getProgramDefinedTypes(),
-        nameApi: getNameApi(options.nameTransformers),
+        nameApi: getNameApi(options.nameTransformers ?? DEFAULT_NAME_TRANSFORMERS),
     };
 
     const asPage = <TFragment extends Fragment | undefined>(fragment: TFragment): TFragment => {
