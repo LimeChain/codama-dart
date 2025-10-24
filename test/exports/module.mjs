@@ -7,4 +7,4 @@ import { visit } from '@codama/visitors-core';
 import { getRenderMapVisitor } from '../../dist/index.node.mjs';
 
 const node = definedTypeNode({ name: 'answerToLife', type: numberTypeNode('u8') });
-visit(node, getRenderMapVisitor());
+visit(node, getRenderMapVisitor({}));
