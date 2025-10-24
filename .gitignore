@@ -137,3 +137,7 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# e2e generated files
+e2e/**/lib/**
+e2e/**/analyze.log

@@ -23,7 +23,7 @@ async function generateProject(project) {
     const idl = readJson(path.join(__dirname, project, 'idl.json'));
     const codama = createFromRoot(rootNodeFromAnchor(idl));
     const outDir = path.join(__dirname, project, 'lib', 'generated');
-    codama.accept(renderVisitor(outDir));
+    codama.accept(renderVisitor(outDir, {}));
 }
 
 main().catch(err => {

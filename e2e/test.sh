@@ -44,5 +44,5 @@ function test_anchor_project() {
 test_project dummy
 test_project system
 test_project memo
-# test_project meteora  # TODO: Uncomment after fixing [[u32; 3]; 2] -> type of nested fixed arrays and it will not break
+test_project meteora  # TODO: Uncomment after fixing [[u32; 3]; 2] -> type of nested fixed arrays and it will not break
 test_anchor_project anchor
