@@ -2,6 +2,7 @@ import { CamelCaseString, isNode, PdaNode, PdaSeedValueNode, StandaloneValueNode
 
 import { Fragment } from './fragment';
 import { RenderScope } from './options';
+import { generateDartSeedSerializationCode, getTypeInfo } from './types';
 
 /**
  * Generates Dart code for PDA seeds based on a PDA node and its seed values
@@ -9,7 +10,7 @@ import { RenderScope } from './options';
 export function generatePdaSeeds(
     pdaNode: PdaNode,
     pdaSeedValues: PdaSeedValueNode[] | undefined,
-    nameApi: RenderScope['nameApi'],
+    scope: RenderScope,
 ): string[] {
     return pdaNode.seeds.map(seed => {
         if (isNode(seed, 'constantPdaSeedNode')) {
@@ -20,12 +21,10 @@ export function generatePdaSeeds(
                 return `programId.bytes`;
             }
             if (isNode(seed.value, 'bytesValueNode')) {
-                // Convert byte array to Uint8List
                 const byteArray = Array.from(Buffer.from(seed.value.data, 'hex'));
                 return `Uint8List.fromList([${byteArray.join(', ')}])`;
             }
             if (seed.value.kind === 'arrayValueNode' && seed.value.items) {
-                // Handle array of bytes like [108, 101, 32, 115, 101, 101, 100]
                 const bytes = seed.value.items.map((item: StandaloneValueNode) =>
                     isNode(item, 'numberValueNode') ? item.number : 0,
                 );
@@ -35,12 +34,16 @@ export function generatePdaSeeds(
         if (isNode(seed, 'variablePdaSeedNode')) {
             const valueSeed = pdaSeedValues?.find((s: PdaSeedValueNode) => s.name === seed.name)?.value;
 
-            if (valueSeed && (isNode(valueSeed, 'accountValueNode') || isNode(valueSeed, 'argumentValueNode'))) {
+            if (valueSeed && isNode(valueSeed, 'accountValueNode')) {
                 const paramName = valueSeed.name;
                 return `${paramName}.toByteArray()`;
             }
+            if (valueSeed && isNode(valueSeed, 'argumentValueNode')) {
+                const fieldSerializationCode = generateDartSeedSerializationCode(seed, scope.nameApi);
+                return fieldSerializationCode;
+            }
 
-            const seedName = nameApi.instructionField(seed.name);
+            const seedName = scope.nameApi.instructionField(seed.name);
             return `${seedName}.toByteArray()`;
         }
         return 'utf8.encode("fallback")';
@@ -54,28 +57,26 @@ export function createInlinePdaFile(
     accountName: string,
     pdaNode: PdaNode,
     pdaSeedValues: PdaSeedValueNode[] | undefined,
-    nameApi: RenderScope['nameApi'],
     programPublicKey: string | undefined,
-    programName: string | undefined,
-    packageName: string,
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'>,
     asPage: <TFragment extends Fragment | undefined>(fragment: TFragment) => TFragment,
 ): Fragment | undefined {
+    const { nameApi, programName, packageName } = scope;
     const functionName = `derive${accountName.charAt(0).toUpperCase() + accountName.slice(1)}Pda`;
-    const seeds = generatePdaSeeds(pdaNode, pdaSeedValues, nameApi);
+    const seeds = generatePdaSeeds(pdaNode, pdaSeedValues, scope);
 
     const parameters: string[] = [];
     let programClassName: string = '';
-    if (programName) {
-        programClassName = nameApi.programType(programName as CamelCaseString);
-    }
+
+    programClassName = nameApi.programType(programName as CamelCaseString);
 
     pdaNode.seeds.forEach(seed => {
         if (isNode(seed, 'variablePdaSeedNode')) {
             const valueSeed = pdaSeedValues?.find((s: PdaSeedValueNode) => s.name === seed.name)?.value;
             if (valueSeed && (isNode(valueSeed, 'accountValueNode') || isNode(valueSeed, 'argumentValueNode'))) {
-                // This is either an account or argument parameter
                 const paramName = valueSeed.name;
-                parameters.push(`Ed25519HDPublicKey ${paramName}`);
+                const dartType = getTypeInfo(seed.type, scope).dartType;
+                parameters.push(`${dartType} ${paramName}`);
             }
         }
     });
@@ -96,7 +97,7 @@ Future<Ed25519HDPublicKey> ${functionName}(${parameterList}) async {
   );
 }`;
 
-    const imports = new Set(['dart:typed_data', 'package:borsh_annotation_extended/borsh_annotation_extended.dart']);
+    const imports = new Set(['dart:convert', 'package:borsh_annotation_extended/borsh_annotation_extended.dart']);
     if (programClassName) {
         imports.add(`package:${packageName}/${programName}/programs/${programName}.dart`);
     }

@@ -12,6 +12,7 @@ import {
     resolveNestedTypeNode,
     SizePrefixTypeNode,
     TypeNode,
+    VariablePdaSeedNode,
 } from '@codama/nodes';
 
 import { getBEnumAnnotation } from '../fragments/enumType';
@@ -345,4 +346,40 @@ function getSizePrefixTypeInfo(node: SizePrefixTypeNode): TypeInfo {
         defaultValue: "''",
         imports: [],
     };
+}
+
+export function generateDartSeedSerializationCode(seed: VariablePdaSeedNode, nameApi: NameApi): string {
+    const argType = seed.type;
+    const fieldName = nameApi.instructionField(seed.name);
+
+    return generateSerializationForType(argType, fieldName);
+}
+
+function generateSerializationForType(typeNode: TypeNode, fieldName: string): string {
+    switch (typeNode.kind) {
+        case 'sizePrefixTypeNode':
+        case 'fixedSizeTypeNode':
+            return generateSerializationForType(resolveNestedTypeNode(typeNode.type), fieldName);
+
+        case 'stringTypeNode':
+            return `Uint8List.fromList(utf8.encode(${fieldName}))`;
+
+        case 'bytesTypeNode':
+            return fieldName;
+
+        case 'numberTypeNode': {
+            const numberType = typeNode as NumberTypeNode;
+            return `(() {
+            final extWriter = ExtendedBinaryWriter.fromBinaryWriter(BinaryWriter());
+            extWriter.write${numberType.format.toUpperCase()}(${fieldName});
+            return extWriter.toArray();
+            })()`;
+        }
+
+        case 'publicKeyTypeNode':
+            return `${fieldName}.bytes`;
+
+        default:
+            return `${fieldName}.toBorsh()`;
+    }
 }
