@@ -1,0 +1,275 @@
+import {
+    camelCase,
+    DefinedTypeNode,
+    EnumTypeNode,
+    EnumVariantTypeNode,
+    getAllInstructionsWithSubs,
+    getAllPrograms,
+    isNode,
+} from '@codama/nodes';
+import { createRenderMap, mergeRenderMaps } from '@codama/renderers-core';
+import {
+    extendVisitor,
+    findProgramNodeFromPath,
+    LinkableDictionary,
+    NodeStack,
+    pipe,
+    recordLinkablesOnFirstVisitVisitor,
+    recordNodeStackVisitor,
+    staticVisitor,
+    visit,
+} from '@codama/visitors-core';
+
+import {
+    getAccountPageFragment,
+    getEnumMainFragment,
+    getEnumVariantFragment,
+    getErrorPageFragment,
+    getInstructionPageFragment,
+    getLibraryIndexFragment,
+    getProgramPageFragment,
+    getStructTypeFragment,
+} from '../fragments';
+import { Fragment, generatePubspec, getNameApi, getPageFragment, GetRenderMapOptions, RenderScope } from '../utils';
+import { createInlinePdaFile } from '../utils/pda';
+
+export function getRenderMapVisitor(
+    options: GetRenderMapOptions,
+    packageName: string,
+    programName: string,
+    programPublicKey: string,
+) {
+    const linkables = new LinkableDictionary();
+    const stack = new NodeStack();
+
+    const getProgramDefinedTypes = (): DefinedTypeNode[] => {
+        try {
+            const programNode = findProgramNodeFromPath(stack.getPath('definedTypeNode'));
+            return programNode?.definedTypes || [];
+        } catch {
+            return [];
+        }
+    };
+
+    const renderScope: RenderScope = {
+        definedTypes: getProgramDefinedTypes(),
+        nameApi: getNameApi(options.nameTransformers),
+        packageName,
+        programName,
+    };
+
+    const asPage = <TFragment extends Fragment | undefined>(fragment: TFragment): TFragment => {
+        if (!fragment) return undefined as TFragment;
+        return getPageFragment(fragment, programName) as TFragment;
+    };
+
+    const visitEnumType = (enumNode: DefinedTypeNode, programDefinedTypes: DefinedTypeNode[]) => {
+        const enumType = enumNode.type as EnumTypeNode;
+        const variants = enumType.variants || [];
+        const enumName = camelCase(enumNode.name);
+        const enumRenderScope = { ...renderScope, definedTypes: programDefinedTypes };
+
+        const variantRenderMaps = variants.map((variant: EnumVariantTypeNode) => {
+            switch (variant.kind) {
+                case 'enumEmptyVariantTypeNode':
+                    return visitEnumEmptyVariantType(variant, enumName, enumRenderScope);
+                case 'enumStructVariantTypeNode':
+                    return visitEnumStructVariantType(variant, enumName, enumRenderScope);
+                case 'enumTupleVariantTypeNode':
+                    return visitEnumTupleVariantType(variant, enumName, enumRenderScope);
+                default:
+                    return createRenderMap();
+            }
+        });
+
+        const mainEnumRenderMap = createRenderMap(
+            `lib/${programName}/types/${enumName}/${enumName}.dart`,
+            asPage(
+                getEnumMainFragment({
+                    ...enumRenderScope,
+                    name: enumNode.name,
+                    node: enumNode,
+                }),
+            ),
+        );
+
+        return mergeRenderMaps([mainEnumRenderMap, ...variantRenderMaps]);
+    };
+
+    const visitEnumEmptyVariantType = (variant: EnumVariantTypeNode, enumName: string, scope: RenderScope) => {
+        const variantName = renderScope.nameApi.definedType(camelCase(variant.name));
+        const variantFileName = camelCase(variant.name);
+
+        return createRenderMap(
+            `lib/${programName}/types/${enumName}/${variantFileName}.dart`,
+            asPage(
+                getEnumVariantFragment({
+                    ...scope,
+                    variant,
+                    variantName,
+                }),
+            ),
+        );
+    };
+
+    const visitEnumStructVariantType = (variant: EnumVariantTypeNode, enumName: string, scope: RenderScope) => {
+        const variantName = renderScope.nameApi.definedType(camelCase(variant.name));
+        const variantFileName = camelCase(variant.name);
+
+        return createRenderMap(
+            `lib/${programName}/types/${enumName}/${variantFileName}.dart`,
+            asPage(
+                getEnumVariantFragment({
+                    ...scope,
+                    variant,
+                    variantName,
+                }),
+            ),
+        );
+    };
+
+    const visitEnumTupleVariantType = (variant: EnumVariantTypeNode, enumName: string, scope: RenderScope) => {
+        const variantName = renderScope.nameApi.definedType(camelCase(variant.name));
+        const variantFileName = camelCase(variant.name);
+
+        return createRenderMap(
+            `lib/${programName}/types/${enumName}/${variantFileName}.dart`,
+            asPage(
+                getEnumVariantFragment({
+                    ...scope,
+                    variant,
+                    variantName,
+                }),
+            ),
+        );
+    };
+
+    return pipe(
+        staticVisitor(() => createRenderMap(), {
+            keys: ['rootNode', 'programNode', 'pdaNode', 'accountNode', 'definedTypeNode', 'instructionNode'],
+        }),
+        v =>
+            extendVisitor(v, {
+                visitAccount(node) {
+                    return createRenderMap(
+                        `lib/${programName}/accounts/${camelCase(node.name)}.dart`,
+                        asPage(
+                            getAccountPageFragment({
+                                ...renderScope,
+                                accountPath: stack.getPath('accountNode'),
+                            }),
+                        ),
+                    );
+                },
+
+                visitDefinedType(node) {
+                    const programDefinedTypes = getProgramDefinedTypes();
+
+                    if (node.type.kind === 'structTypeNode') {
+                        return createRenderMap(
+                            `lib/${programName}/types/${camelCase(node.name)}.dart`,
+                            asPage(
+                                getStructTypeFragment({
+                                    ...renderScope,
+                                    definedTypes: programDefinedTypes,
+                                    name: node.name,
+                                    node: node.type,
+                                }),
+                            ),
+                        );
+                    } else if (node.type.kind === 'enumTypeNode') {
+                        return visitEnumType(node, programDefinedTypes);
+                    }
+                    return createRenderMap();
+                },
+
+                visitInstruction(node) {
+                    const instructionRenderMap = createRenderMap(
+                        `lib/${programName}/instructions/${camelCase(node.name)}.dart`,
+                        asPage(
+                            getInstructionPageFragment({
+                                ...renderScope,
+                                instructionPath: stack.getPath('instructionNode'),
+                            }),
+                        ),
+                    );
+
+                    const pdaRenderMaps = new Map<string, ReturnType<typeof createRenderMap>>();
+
+                    node.accounts.forEach(account => {
+                        if (account.defaultValue?.kind !== 'pdaValueNode') {
+                            return;
+                        }
+                        if (!isNode(account.defaultValue.pda, 'pdaNode')) {
+                            return;
+                        }
+
+                        const pdaName = camelCase(account.name);
+
+                        // Avoid duplicate PDA files for the same account name
+                        if (!pdaRenderMaps.has(pdaName)) {
+                            const pdaFile = createInlinePdaFile(
+                                account.name,
+                                account.defaultValue.pda,
+                                account.defaultValue.seeds,
+                                programPublicKey,
+                                renderScope,
+                                asPage,
+                            );
+                            if (pdaFile) {
+                                pdaRenderMaps.set(
+                                    pdaName,
+                                    createRenderMap(`lib/${programName}/pdas/${pdaName}.dart`, pdaFile),
+                                );
+                            }
+                        }
+                    });
+
+                    const pdaRenderMapArray = Array.from(pdaRenderMaps.values());
+                    return mergeRenderMaps([instructionRenderMap, ...pdaRenderMapArray]);
+                },
+
+                visitProgram(node, { self }) {
+                    const programRenderScope = { ...renderScope, definedTypes: node.definedTypes };
+
+                    return mergeRenderMaps([
+                        createRenderMap({
+                            [`lib/${programName}/programs/${camelCase(node.name)}.dart`]: asPage(
+                                getProgramPageFragment({ ...programRenderScope, programNode: node }),
+                            ),
+                            [`lib/${programName}/errors/${camelCase(node.name)}.dart`]:
+                                node.errors.length > 0
+                                    ? asPage(getErrorPageFragment({ ...programRenderScope, programNode: node }))
+                                    : undefined,
+                        }),
+                        ...node.pdas.map(p => visit(p, self)),
+                        ...node.accounts.map(a => visit(a, self)),
+                        ...node.definedTypes.map(t => visit(t, self)),
+                        ...getAllInstructionsWithSubs(node, { leavesOnly: true }).map(i => visit(i, self)),
+                    ]);
+                },
+
+                visitRoot(node, { self }) {
+                    const pubspecContent = generatePubspec(packageName, {
+                        description: `Generated Dart package for Solana program interaction`,
+                        version: '1.0.0',
+                    });
+
+                    return mergeRenderMaps([
+                        createRenderMap({
+                            [`lib/${programName}/${programName}.dart`]: asPage(
+                                getLibraryIndexFragment({
+                                    ...renderScope,
+                                    rootNode: node,
+                                }),
+                            ),
+                            ['pubspec.yaml']: pubspecContent,
+                        }),
+                        ...getAllPrograms(node).map(p => visit(p, self)),
+                    ]);
+                },
+            }),
+        v => recordNodeStackVisitor(v, stack),
+        v => recordLinkablesOnFirstVisitVisitor(v, linkables),
+    );
+}
