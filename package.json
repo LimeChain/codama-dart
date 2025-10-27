@@ -1,21 +1,31 @@
 {
-    "name": "@limechain/renderers-dart",
-    "version": "1.0.0",
-    "description": "Dart renderer for Codama IDLs",
+    "name": "@limechain/codama-dart",
+    "version": "0.1.0",
+    "description": "Solana Dart Client Generator, Powered by Codama",
+    "keywords": [
+        "codama",
+        "dart",
+        "renderer",
+        "solana",
+        "idl",
+        "code-generation"
+    ],
+    "author": "LimeChain <hi@limechain.tech>",
+    "homepage": "https://github.com/limechain/codama-dart#readme",
     "exports": {
         "types": "./dist/types/index.d.ts",
         "import": "./dist/index.node.mjs",
         "require": "./dist/index.node.cjs"
     },
-    "main": "./dist/index.node.cjs",
-    "module": "./dist/index.node.mjs",
-    "types": "./dist/types/index.d.ts",
     "type": "commonjs",
     "files": [
         "./dist/types",
         "./dist/index.*"
     ],
     "sideEffects": false,
+    "publishConfig": {
+        "access": "public"
+    },
     "scripts": {
         "build": "rimraf dist && tsup && tsc -p ./tsconfig.declarations.json",
         "lint": "eslint . && prettier --check .",
@@ -46,10 +56,10 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/limechain/renderers-dart"
+        "url": "https://github.com/limechain/codama-dart"
     },
     "bugs": {
-        "url": "https://github.com/limechain/renderers-dart/issues"
+        "url": "https://github.com/limechain/codama-dart/issues"
     },
     "engines": {
         "node": ">=20.18.0"
