@@ -3,11 +3,11 @@
 [![npm][npm-image]][npm-url]
 [![npm-downloads][npm-downloads-image]][npm-url]
 
-[npm-downloads-image]: https://img.shields.io/npm/dm/@limechain/renderers-dart.svg?style=flat
-[npm-image]: https://img.shields.io/npm/v/@limechain/renderers-dart.svg?style=flat&label=%40limechain%2Frenderers-dart
-[npm-url]: https://www.npmjs.com/package/@limechain/renderers-dart
+[npm-downloads-image]: https://img.shields.io/npm/dm/@limechain/codama-dart.svg?style=flat
+[npm-image]: https://img.shields.io/npm/v/@limechain/codama-dart.svg?style=flat&label=%40limechain%2Fcodama-dart
+[npm-url]: https://www.npmjs.com/package/@limechain/codama-dart
 
-This package generates Dart clients from your Codama IDLs. The generated clients are compatible with the [`solana` Dart package](https://pub.dev/packages/solana).
+This package generates Dart clients from your Codama IDLs. The generated clients are compatible with the [Solana Dart package](https://pub.dev/packages/solana).
 
 ## 1. Pre-requisites
 
@@ -24,7 +24,7 @@ https://dart.dev/get-dart
 ## 2. Renderer Installation
 
 ```sh
-pnpm install @limechain/renderers-dart
+pnpm install @limechain/codama-dart
 ```
 
 ## 3. Usage
@@ -38,7 +38,7 @@ pnpm install @limechain/renderers-dart
     "scripts": {
         "dart": [
             {
-                "from": "@limechain/renderers-dart",
+                "from": "@limechain/codama-dart",
                 "args": [
                     "generated",
                     {
@@ -73,19 +73,20 @@ The renderer generates a complete Dart package with the following structure:
 
 ```
 lib/
-├── lib.dart              # Main library export file
-|
-├── accounts/                   # Account data classes
-│
-├── instructions/               # Instruction functions
-│
-├── types/                      # Custom type definitions
-│
-├── errors/                     # Program error classes
-│
-├── pdas/                       # PDA derivation functions
-│
-└── programs/                   # Program constants and metadata
+  └─ProgramName
+        ├── lib.dart              # Main library export file
+        |
+        ├── accounts/                   # Account data classes
+        │
+        ├── instructions/               # Instruction functions
+        │
+        ├── types/                      # Custom type definitions
+        │
+        ├── errors/                     # Program error classes
+        │
+        ├── pdas/                       # PDA derivation functions
+        │
+        └── programs/                   # Program constants and metadata
 ```
 
 ## 5. Features
