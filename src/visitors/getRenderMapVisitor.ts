@@ -212,10 +212,8 @@ export function getRenderMapVisitor(
                                 account.name,
                                 account.defaultValue.pda,
                                 account.defaultValue.seeds,
-                                renderScope.nameApi,
                                 programPublicKey,
-                                programName,
-                                packageName,
+                                renderScope,
                                 asPage,
                             );
                             if (pdaFile) {
