@@ -1,7 +1,3 @@
-// Constants for Git-based dependencies
-const REPO_URL = 'https://github.com/vlady-kotsev/borsh_annotation_extended.git';
-const REPO_REF = '75f03857dd32b4c07ce3017db9de41d0b592e716';
-
 export function generatePubspec(
     packageName: string,
     options: {
@@ -48,7 +44,7 @@ export function generatePubspec(
     sections.push('  borsh: 0.3.2');
 
     // Borsh annotation dependency
-    sections.push('  borsh_annotation_extended:', '    git:', `      url: ${REPO_URL}`, `      ref: ${REPO_REF}`);
+    sections.push('  borsh_annotation_extended: ^0.0.1');
 
     // Solana dependency
     sections.push('  solana: 0.31.2');
