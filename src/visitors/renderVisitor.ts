@@ -1,3 +1,4 @@
+import { camelCase, getAllPrograms } from '@codama/nodes';
 import { deleteDirectory, writeRenderMap } from '@codama/renderers-core';
 import { rootNodeVisitor, visit } from '@codama/visitors-core';
 import { execSync } from 'child_process';
@@ -11,7 +12,15 @@ export function renderVisitor(path: string, options: RenderOptions) {
             deleteDirectory(path);
         }
 
-        const renderMap = visit(root, getRenderMapVisitor(options));
+        const programs = getAllPrograms(root);
+        if (programs.length === 0 || !programs[0].name || !programs[0].publicKey) {
+            throw Error('Could not find program');
+        }
+
+        const programName = camelCase(programs[0].name);
+        const programPublicKey = camelCase(programs[0].publicKey);
+
+        const renderMap = visit(root, getRenderMapVisitor(options, path, programName, programPublicKey));
         writeRenderMap(renderMap, path);
 
         if (options.formatCode ?? true) {

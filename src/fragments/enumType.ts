@@ -13,27 +13,26 @@ import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, NameApi, Ren
 
 function collectVariantImports(
     variant: EnumVariantTypeNode,
-    nameApi: NameApi,
-    scope: Pick<RenderScope, 'definedTypes'>,
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'>,
     allImports: Set<string>,
 ): void {
     if (variant.kind === 'enumStructVariantTypeNode') {
         const resolvedStruct = resolveNestedTypeNode(variant.struct);
         resolvedStruct.fields?.forEach((field: StructFieldTypeNode) => {
-            const typeInfo = getTypeInfo(field.type, nameApi, scope.definedTypes);
+            const typeInfo = getTypeInfo(field.type, scope);
             typeInfo.imports.forEach(imp => allImports.add(imp));
         });
     } else if (variant.kind === 'enumTupleVariantTypeNode') {
         const resolvedTuple = resolveNestedTypeNode(variant.tuple);
         resolvedTuple.items?.forEach((item: TypeNode) => {
-            const typeInfo = getTypeInfo(item, nameApi, scope.definedTypes);
+            const typeInfo = getTypeInfo(item, scope);
             typeInfo.imports.forEach(imp => allImports.add(imp));
         });
     }
 }
 
 export function getEnumVariantFragment(
-    scope: Pick<RenderScope, 'definedTypes' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         variant: EnumVariantTypeNode;
         variantName: string;
     },
@@ -41,7 +40,7 @@ export function getEnumVariantFragment(
     const { variantName, variant, nameApi } = scope;
 
     const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
-    collectVariantImports(variant, nameApi, scope, allImports);
+    collectVariantImports(variant, scope, allImports);
 
     let content = '';
 
@@ -61,12 +60,12 @@ export function getEnumVariantFragment(
 }
 
 export function getEnumMainFragment(
-    scope: Pick<RenderScope, 'definedTypes' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         name: string;
         node: DefinedTypeNode;
     },
 ): Fragment {
-    const { name, node, nameApi } = scope;
+    const { name, node, nameApi, packageName, programName } = scope;
 
     if (node.type.kind !== 'enumTypeNode') {
         throw new Error(`Expected enumTypeNode but got ${node.type.kind}`);
@@ -77,12 +76,12 @@ export function getEnumMainFragment(
     const variants = enumTypeNode.variants || [];
 
     const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
-
+    const allExports = new Set<string>();
     variants.forEach(variant => {
-        const variantFileName = camelCase(variant.name);
-        allImports.add(`./${variantFileName}.dart`);
-
-        collectVariantImports(variant, nameApi, scope, allImports);
+        const variantPath = `package:${packageName}/${programName}/types/${camelCase(className)}/${camelCase(variant.name)}.dart`;
+        allImports.add(variantPath);
+        allExports.add(variantPath);
+        collectVariantImports(variant, scope, allImports);
     });
 
     const factoryConstructors = variants
@@ -104,7 +103,7 @@ export function getEnumMainFragment(
                     }
                     const tupleParams = resolvedTuple.items
                         .map((item: TypeNode, index: number) => {
-                            const typeInfo = getTypeInfo(item, nameApi, scope.definedTypes);
+                            const typeInfo = getTypeInfo(item, scope);
                             return `${typeInfo.dartType} field${index}`;
                         })
                         .join(', ');
@@ -124,7 +123,7 @@ export function getEnumMainFragment(
                     }
                     const structParams = resolvedStruct.fields
                         .map((field: StructFieldTypeNode) => {
-                            const typeInfo = getTypeInfo(field.type, nameApi, scope.definedTypes);
+                            const typeInfo = getTypeInfo(field.type, scope);
                             const fieldName = nameApi.accountField(field.name);
                             return `required ${typeInfo.dartType} ${fieldName}`;
                         })
@@ -146,14 +145,13 @@ export function getEnumMainFragment(
         .filter(Boolean)
         .join('\n\n');
 
-    const variantAnnotations = variants
-        .map(variant => {
-            const variantName = nameApi.definedType(camelCase(variant.name));
-            return `${variantName}: B${variantName}()`;
-        })
-        .join(', ');
+    const exportStatements = Array.from(allExports)
+        .map(exportPath => `export '${exportPath}';`)
+        .join('\n');
 
-    const content = `// Main enum class with factory constructors for each variant
+    const content = `${exportStatements}
+
+// Main enum class with factory constructors for each variant
 class ${className} {
   final dynamic variant;
   final int discriminant;
@@ -177,10 +175,7 @@ ${factoryConstructors}
     }
     return writer.toArray();
   }
-}
-
-// Borsh annotation generator for use in other structs
-// Usage: @BEnum<${className}>({${variantAnnotations}}) required ${className} myEnum,`;
+}`;
 
     return createFragment(content, Array.from(allImports));
 }
@@ -224,7 +219,7 @@ function generateTupleVariantAsStruct(
     variantName: string,
     variant: EnumTupleVariantTypeNode,
     nameApi: NameApi,
-    scope: Pick<RenderScope, 'definedTypes'>,
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'>,
 ): string {
     const resolvedTuple = resolveNestedTypeNode(variant.tuple);
     if (!resolvedTuple.items) {
@@ -233,7 +228,7 @@ function generateTupleVariantAsStruct(
 
     const params = resolvedTuple.items
         .map((item: TypeNode, index: number) => {
-            const typeInfo = getTypeInfo(item, nameApi, scope.definedTypes);
+            const typeInfo = getTypeInfo(item, scope);
             const borshAnnotation = getBorshAnnotation(item, nameApi, scope.definedTypes);
             return `    ${borshAnnotation} required ${typeInfo.dartType} field${index},`;
         })
@@ -274,7 +269,7 @@ function generateStructVariantAsStruct(
     variantName: string,
     variant: EnumStructVariantTypeNode,
     nameApi: NameApi,
-    scope: Pick<RenderScope, 'definedTypes'>,
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'>,
 ): string {
     const resolvedStruct = resolveNestedTypeNode(variant.struct);
     if (!resolvedStruct.fields) {
@@ -283,7 +278,7 @@ function generateStructVariantAsStruct(
 
     const params = resolvedStruct.fields
         .map((field: StructFieldTypeNode) => {
-            const typeInfo = getTypeInfo(field.type, nameApi, scope.definedTypes);
+            const typeInfo = getTypeInfo(field.type, scope);
             const borshAnnotation = getBorshAnnotation(field.type, nameApi, scope.definedTypes);
             const fieldName = nameApi.accountField(field.name);
             return `    ${borshAnnotation} required ${typeInfo.dartType} ${fieldName},`;

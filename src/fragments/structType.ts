@@ -3,10 +3,9 @@ import { camelCase, StructTypeNode } from '@codama/nodes';
 import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, RenderScope } from '../utils';
 
 export function getStructTypeFragment(
-    scope: Pick<RenderScope, 'definedTypes' | 'nameApi'> & {
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         name: string;
         node: StructTypeNode;
-        size: number | null;
     },
 ): Fragment {
     const { name, node, nameApi } = scope;
@@ -16,7 +15,7 @@ export function getStructTypeFragment(
     const allImports = new Set(['package:borsh_annotation_extended/borsh_annotation_extended.dart']);
     const factoryParams = fields
         .map(field => {
-            const typeInfo = getTypeInfo(field.type, nameApi, scope.definedTypes);
+            const typeInfo = getTypeInfo(field.type, scope);
             const borshAnnotation = getBorshAnnotation(field.type, nameApi, scope.definedTypes);
             const fieldName = nameApi.accountField(field.name);
 

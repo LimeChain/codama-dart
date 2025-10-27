@@ -1,4 +1,4 @@
-import { InstructionNode, isNode, PdaSeedValueNode } from '@codama/nodes';
+import { InstructionNode, isNode, PdaSeedValueNode, RootNode } from '@codama/nodes';
 import { findProgramNodeFromPath, getLastNodeFromPath, NodePath } from '@codama/visitors-core';
 
 import { createFragment, Fragment, RenderScope } from '../utils';
@@ -6,16 +6,15 @@ import { getBuiltinProgramAddress } from '../utils/builtinPrograms';
 import { generatePdaSeeds } from '../utils/pda';
 
 export function getInstructionFunctionFragment(
-    scope: Pick<RenderScope, 'nameApi'> & {
+    scope: Pick<RenderScope, 'nameApi' | 'packageName' | 'programName'> & {
         instructionPath: NodePath<InstructionNode>;
-        size: number | null;
     },
 ): Fragment | undefined {
     const { instructionPath, nameApi } = scope;
     const instructionNode = getLastNodeFromPath(instructionPath);
     const programNode = findProgramNodeFromPath(instructionPath)!;
 
-    const rootNode = instructionPath.find(node => node.kind === 'rootNode');
+    const rootNode = instructionPath.find(node => node.kind === 'rootNode') as RootNode;
     let rootProgramClassName: string;
     if (rootNode) {
         rootProgramClassName = `${nameApi.programType(rootNode.program.name)}.programId`;
@@ -217,9 +216,9 @@ ${asyncModifier}Instruction${asyncSuffix} ${functionName}(${parameterList}) ${as
 ${functionBody}
 }`;
 
-    const imports = new Set(['package:solana/solana.dart']);
+    const imports: Set<string> = new Set([]);
     if (rootNode) {
-        imports.add(`../programs/${rootNode.program.name}.dart`);
+        imports.add(`package:${scope.packageName}/${scope.programName}/programs/${rootNode.program.name}.dart`);
     }
 
     return createFragment(content, Array.from(imports));

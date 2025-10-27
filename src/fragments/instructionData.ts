@@ -4,9 +4,8 @@ import { findProgramNodeFromPath, getLastNodeFromPath, NodePath } from '@codama/
 import { createFragment, Fragment, getBorshAnnotation, getTypeInfo, RenderScope } from '../utils';
 
 export function getInstructionDataFragment(
-    scope: Pick<RenderScope, 'nameApi'> & {
+    scope: Pick<RenderScope, 'definedTypes' | 'nameApi' | 'packageName' | 'programName'> & {
         instructionPath: NodePath<InstructionNode>;
-        size: number | null;
     },
 ): Fragment | undefined {
     const { instructionPath, nameApi } = scope;
@@ -29,7 +28,7 @@ export function getInstructionDataFragment(
 
     const factoryParams = nonDiscriminatorFields
         .map(field => {
-            const typeInfo = getTypeInfo(field.type, nameApi, programDefinedTypes);
+            const typeInfo = getTypeInfo(field.type, { ...scope, definedTypes: programDefinedTypes });
             const borshAnnotation = getBorshAnnotation(field.type, nameApi, programDefinedTypes);
             const fieldName = nameApi.instructionField(field.name);
 
