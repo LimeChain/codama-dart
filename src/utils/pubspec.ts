@@ -44,7 +44,7 @@ export function generatePubspec(
     sections.push('  borsh: 0.3.2');
 
     // Borsh annotation dependency
-    sections.push('  borsh_annotation_extended: ^0.1.0');
+    sections.push('  borsh_annotation_extended: ^0.1.1');
 
     // Solana dependency
     sections.push('  solana: 0.31.2');
