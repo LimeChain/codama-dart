@@ -1,0 +1,1163 @@
+{
+  "address": "5HwKs9irsgWxzFwEuSBNUAphNTsjt6rUXNbhweDvAhPo",
+  "metadata": {
+    "name": "data_structures",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "init_array",
+      "discriminator": [
+        66,
+        104,
+        218,
+        94,
+        73,
+        18,
+        62,
+        238
+      ],
+      "accounts": [
+        {
+          "name": "array_acc",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "init_enums",
+      "discriminator": [
+        161,
+        115,
+        237,
+        7,
+        22,
+        236,
+        21,
+        221
+      ],
+      "accounts": [
+        {
+          "name": "enums_acc",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "init_structs",
+      "discriminator": [
+        158,
+        149,
+        203,
+        141,
+        74,
+        38,
+        116,
+        254
+      ],
+      "accounts": [
+        {
+          "name": "struct_acc",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "modify_array",
+      "discriminator": [
+        57,
+        69,
+        24,
+        175,
+        136,
+        218,
+        160,
+        233
+      ],
+      "accounts": [
+        {
+          "name": "array_acc",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "u8_array",
+          "type": "bytes"
+        },
+        {
+          "name": "i8_array",
+          "type": {
+            "vec": "i8"
+          }
+        },
+        {
+          "name": "u16_array",
+          "type": {
+            "vec": "u16"
+          }
+        },
+        {
+          "name": "i16_array",
+          "type": {
+            "vec": "i16"
+          }
+        },
+        {
+          "name": "u32_array",
+          "type": {
+            "vec": "u32"
+          }
+        },
+        {
+          "name": "i32_array",
+          "type": {
+            "vec": "i32"
+          }
+        },
+        {
+          "name": "u64_array",
+          "type": {
+            "vec": "u64"
+          }
+        },
+        {
+          "name": "i64_array",
+          "type": {
+            "vec": "i64"
+          }
+        },
+        {
+          "name": "string_vector",
+          "type": {
+            "vec": "string"
+          }
+        },
+        {
+          "name": "boolean_vector",
+          "type": {
+            "vec": "bool"
+          }
+        },
+        {
+          "name": "pubkey_vector",
+          "type": {
+            "vec": "pubkey"
+          }
+        },
+        {
+          "name": "struct_vector",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "SimpleStruct"
+              }
+            }
+          }
+        },
+        {
+          "name": "option_u32",
+          "type": {
+            "option": {
+              "vec": "u32"
+            }
+          }
+        },
+        {
+          "name": "optional_vec_struct",
+          "type": {
+            "option": {
+              "vec": {
+                "defined": {
+                  "name": "SimpleStruct"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "optional_str",
+          "type": {
+            "option": "string"
+          }
+        },
+        {
+          "name": "optional_fix_arr",
+          "type": {
+            "option": {
+              "array": [
+                "u32",
+                2
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "modify_enum",
+      "discriminator": [
+        172,
+        21,
+        121,
+        9,
+        78,
+        234,
+        150,
+        135
+      ],
+      "accounts": [
+        {
+          "name": "enums_acc",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "my_enum",
+          "type": {
+            "defined": {
+              "name": "ExampleEnum"
+            }
+          }
+        },
+        {
+          "name": "optional_enum",
+          "type": {
+            "option": {
+              "defined": {
+                "name": "ExampleEnum"
+              }
+            }
+          }
+        },
+        {
+          "name": "enum_vec",
+          "type": {
+            "vec": {
+              "defined": {
+                "name": "ExampleEnum"
+              }
+            }
+          }
+        },
+        {
+          "name": "optional_enum_vec",
+          "type": {
+            "option": {
+              "vec": {
+                "defined": {
+                  "name": "ExampleEnum"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "enum_array",
+          "type": {
+            "array": [
+              {
+                "defined": {
+                  "name": "ExampleEnum"
+                }
+              },
+              2
+            ]
+          }
+        },
+        {
+          "name": "struct_with_enum",
+          "type": {
+            "defined": {
+              "name": "StructWithEnum"
+            }
+          }
+        },
+        {
+          "name": "struct_with_optional_enum",
+          "type": {
+            "defined": {
+              "name": "StructWithOptionalEnum"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "modify_struct",
+      "discriminator": [
+        228,
+        1,
+        112,
+        31,
+        99,
+        121,
+        127,
+        29
+      ],
+      "accounts": [
+        {
+          "name": "struct_acc",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "simple_struct",
+          "type": {
+            "defined": {
+              "name": "SimpleStruct"
+            }
+          }
+        },
+        {
+          "name": "primitive_account",
+          "type": {
+            "defined": {
+              "name": "PrimitiveAccount"
+            }
+          }
+        },
+        {
+          "name": "string_account",
+          "type": {
+            "defined": {
+              "name": "StringAccount"
+            }
+          }
+        },
+        {
+          "name": "vector_account",
+          "type": {
+            "defined": {
+              "name": "VectorAccount"
+            }
+          }
+        },
+        {
+          "name": "optional_account",
+          "type": {
+            "defined": {
+              "name": "OptionalAccount"
+            }
+          }
+        },
+        {
+          "name": "nested_structs",
+          "type": {
+            "defined": {
+              "name": "StructAcc"
+            }
+          }
+        },
+        {
+          "name": "fixed_array_account",
+          "type": {
+            "defined": {
+              "name": "FixedArrayAccount"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "ArrayAccount",
+      "discriminator": [
+        60,
+        128,
+        45,
+        114,
+        63,
+        47,
+        120,
+        175
+      ]
+    },
+    {
+      "name": "EnumAccount",
+      "discriminator": [
+        53,
+        221,
+        43,
+        191,
+        228,
+        94,
+        201,
+        208
+      ]
+    },
+    {
+      "name": "StructAccount",
+      "discriminator": [
+        210,
+        141,
+        36,
+        44,
+        194,
+        55,
+        27,
+        33
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "StringTooLong",
+      "msg": "String length exceeds 10 characters"
+    },
+    {
+      "code": 6001,
+      "name": "VectorTooLong",
+      "msg": "Vector length exceeds maximum allowed"
+    }
+  ],
+  "types": [
+    {
+      "name": "ArrayAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "u8_array",
+            "type": "bytes"
+          },
+          {
+            "name": "i8_array",
+            "type": {
+              "vec": "i8"
+            }
+          },
+          {
+            "name": "u16_array",
+            "type": {
+              "vec": "u16"
+            }
+          },
+          {
+            "name": "i16_array",
+            "type": {
+              "vec": "i16"
+            }
+          },
+          {
+            "name": "u32_array",
+            "type": {
+              "vec": "u32"
+            }
+          },
+          {
+            "name": "i32_array",
+            "type": {
+              "vec": "i32"
+            }
+          },
+          {
+            "name": "u64_array",
+            "type": {
+              "vec": "u64"
+            }
+          },
+          {
+            "name": "i64_array",
+            "type": {
+              "vec": "i64"
+            }
+          },
+          {
+            "name": "fixed_i8",
+            "type": {
+              "array": [
+                "i8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "fixed_u16",
+            "type": {
+              "array": [
+                "u16",
+                2
+              ]
+            }
+          },
+          {
+            "name": "fixed_i16",
+            "type": {
+              "array": [
+                "i16",
+                2
+              ]
+            }
+          },
+          {
+            "name": "fixed_u32",
+            "type": {
+              "array": [
+                "u32",
+                2
+              ]
+            }
+          },
+          {
+            "name": "fixed_i32",
+            "type": {
+              "array": [
+                "i32",
+                2
+              ]
+            }
+          },
+          {
+            "name": "fixed_u64",
+            "type": {
+              "array": [
+                "u64",
+                2
+              ]
+            }
+          },
+          {
+            "name": "fixed_i64",
+            "type": {
+              "array": [
+                "i64",
+                2
+              ]
+            }
+          },
+          {
+            "name": "string_vector",
+            "type": {
+              "vec": "string"
+            }
+          },
+          {
+            "name": "boolean_vector",
+            "type": {
+              "vec": "bool"
+            }
+          },
+          {
+            "name": "pubkey_vector",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "struct_vector",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "SimpleStruct"
+                }
+              }
+            }
+          },
+          {
+            "name": "nested_u32",
+            "type": {
+              "vec": {
+                "vec": "u32"
+              }
+            }
+          },
+          {
+            "name": "option_u32",
+            "type": {
+              "option": {
+                "vec": "u32"
+              }
+            }
+          },
+          {
+            "name": "optional_vec_struct",
+            "type": {
+              "option": {
+                "vec": {
+                  "defined": {
+                    "name": "SimpleStruct"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "name": "optional_str",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "optional_fix_arr",
+            "type": {
+              "option": {
+                "array": [
+                  "u32",
+                  2
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "EnumAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "my_enum",
+            "type": {
+              "defined": {
+                "name": "ExampleEnum"
+              }
+            }
+          },
+          {
+            "name": "optional_enum",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "ExampleEnum"
+                }
+              }
+            }
+          },
+          {
+            "name": "enum_vec",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "ExampleEnum"
+                }
+              }
+            }
+          },
+          {
+            "name": "optional_enum_vec",
+            "type": {
+              "option": {
+                "vec": {
+                  "defined": {
+                    "name": "ExampleEnum"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "name": "enum_array",
+            "type": {
+              "array": [
+                {
+                  "defined": {
+                    "name": "ExampleEnum"
+                  }
+                },
+                2
+              ]
+            }
+          },
+          {
+            "name": "struct_with_enum",
+            "type": {
+              "defined": {
+                "name": "StructWithEnum"
+              }
+            }
+          },
+          {
+            "name": "struct_with_optional_enum",
+            "type": {
+              "defined": {
+                "name": "StructWithOptionalEnum"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ExampleEnum",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "VariantA",
+            "fields": [
+              "u32",
+              "bool"
+            ]
+          },
+          {
+            "name": "VariantB",
+            "fields": [
+              {
+                "name": "x",
+                "type": "i64"
+              },
+              {
+                "name": "y",
+                "type": "string"
+              }
+            ]
+          },
+          {
+            "name": "VariantC"
+          },
+          {
+            "name": "VariantD",
+            "fields": [
+              "u8",
+              "i16",
+              "string"
+            ]
+          },
+          {
+            "name": "VariantE",
+            "fields": [
+              {
+                "name": "nested",
+                "type": {
+                  "defined": {
+                    "name": "SimpleStruct"
+                  }
+                }
+              },
+              {
+                "name": "flag",
+                "type": "bool"
+              }
+            ]
+          },
+          {
+            "name": "VariantF",
+            "fields": [
+              {
+                "vec": "u32"
+              }
+            ]
+          },
+          {
+            "name": "VariantG",
+            "fields": [
+              {
+                "option": "string"
+              }
+            ]
+          },
+          {
+            "name": "VariantH",
+            "fields": [
+              "bytes"
+            ]
+          },
+          {
+            "name": "VariantI",
+            "fields": [
+              {
+                "name": "a",
+                "type": "u32"
+              },
+              {
+                "name": "b",
+                "type": "i64"
+              },
+              {
+                "name": "c",
+                "type": "bool"
+              },
+              {
+                "name": "d",
+                "type": "string"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "FixedArrayAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "u8_array",
+            "type": "bytes"
+          },
+          {
+            "name": "i32_array",
+            "type": {
+              "array": [
+                "i32",
+                3
+              ]
+            }
+          },
+          {
+            "name": "pubkey_array",
+            "type": {
+              "array": [
+                "pubkey",
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "NestedStruct",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "a",
+            "type": "u32"
+          },
+          {
+            "name": "b",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OptionalAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "optional_u32",
+            "type": {
+              "option": "u32"
+            }
+          },
+          {
+            "name": "optional_vec",
+            "type": {
+              "option": {
+                "vec": "i64"
+              }
+            }
+          },
+          {
+            "name": "optional_struct",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "SimpleStruct"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PrimitiveAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "u8_field",
+            "type": "u8"
+          },
+          {
+            "name": "i8_field",
+            "type": "i8"
+          },
+          {
+            "name": "u16_field",
+            "type": "u16"
+          },
+          {
+            "name": "i16_field",
+            "type": "i16"
+          },
+          {
+            "name": "u32_field",
+            "type": "u32"
+          },
+          {
+            "name": "i32_field",
+            "type": "i32"
+          },
+          {
+            "name": "u64_field",
+            "type": "u64"
+          },
+          {
+            "name": "i64_field",
+            "type": "i64"
+          },
+          {
+            "name": "bool_field",
+            "type": "bool"
+          },
+          {
+            "name": "pubkey_field",
+            "type": "pubkey"
+          },
+          {
+            "name": "string_field",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SimpleStruct",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "age",
+            "type": "u32"
+          },
+          {
+            "name": "location",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "StringAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "simple_string",
+            "type": "string"
+          },
+          {
+            "name": "optional_string",
+            "type": {
+              "option": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "StructAcc",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "simple_struct",
+            "type": {
+              "defined": {
+                "name": "NestedStruct"
+              }
+            }
+          },
+          {
+            "name": "nested_vec_struct",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "NestedStruct"
+                }
+              }
+            }
+          },
+          {
+            "name": "optional_nested",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "NestedStruct"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "StructAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "simple_struct",
+            "type": {
+              "defined": {
+                "name": "SimpleStruct"
+              }
+            }
+          },
+          {
+            "name": "primitive_account",
+            "type": {
+              "defined": {
+                "name": "PrimitiveAccount"
+              }
+            }
+          },
+          {
+            "name": "fixed_array_account",
+            "type": {
+              "defined": {
+                "name": "FixedArrayAccount"
+              }
+            }
+          },
+          {
+            "name": "string_account",
+            "type": {
+              "defined": {
+                "name": "StringAccount"
+              }
+            }
+          },
+          {
+            "name": "vector_account",
+            "type": {
+              "defined": {
+                "name": "VectorAccount"
+              }
+            }
+          },
+          {
+            "name": "optional_account",
+            "type": {
+              "defined": {
+                "name": "OptionalAccount"
+              }
+            }
+          },
+          {
+            "name": "nested_structs",
+            "type": {
+              "defined": {
+                "name": "StructAcc"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "StructWithEnum",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "field_enum",
+            "type": {
+              "defined": {
+                "name": "ExampleEnum"
+              }
+            }
+          },
+          {
+            "name": "field_enum_vec",
+            "type": {
+              "vec": {
+                "defined": {
+                  "name": "ExampleEnum"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "StructWithOptionalEnum",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "field_optional_enum",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "ExampleEnum"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "VectorAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "u8_vec",
+            "type": "bytes"
+          },
+          {
+            "name": "i64_vec",
+            "type": {
+              "vec": "i64"
+            }
+          },
+          {
+            "name": "string_vec",
+            "type": {
+              "vec": "string"
+            }
+          },
+          {
+            "name": "pubkey_vec",
+            "type": {
+              "vec": "pubkey"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

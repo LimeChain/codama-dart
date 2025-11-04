@@ -1,6 +1,6 @@
 {
     "name": "@limechain/codama-dart",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Solana Dart Client Generator, Powered by Codama",
     "keywords": [
         "codama",
@@ -30,11 +30,12 @@
         "build": "rimraf dist && tsup && tsc -p ./tsconfig.declarations.json",
         "lint": "eslint . && prettier --check .",
         "lint:fix": "eslint --fix . && prettier --write .",
-        "test": "pnpm test:types && pnpm test:treeshakability && pnpm test:unit && pnpm test:exports",
+        "test": "pnpm test:types && pnpm test:treeshakability && pnpm test:unit && pnpm test:exports && pnpm test:e2e",
         "test:exports": "node ./test/exports/module.mjs && node ./test/exports/commonjs.cjs",
         "test:treeshakability": "bash -c 'for file in dist/index.*.mjs; do agadoo $file; done'",
         "test:types": "tsc --noEmit",
-        "test:unit": "vitest run"
+        "test:unit": "vitest run",
+        "test:e2e": "bash test/e2e/test.sh"
     },
     "dependencies": {
         "@codama/nodes": "^1.3.7",
