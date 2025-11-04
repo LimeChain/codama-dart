@@ -44,3 +44,4 @@ test_project dummy
 test_project system
 test_project memo
 test_anchor_project anchor
+test_anchor_project data_structures
