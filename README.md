@@ -9,7 +9,7 @@
 
 This package generates Dart clients from your Codama IDLs. The generated clients are compatible with the [Solana Dart package](https://pub.dev/packages/solana).
 
-## 1. Pre-requisites
+## 1. Prerequisites
 
 ### 1.1 Install Codama
 
@@ -24,7 +24,7 @@ https://dart.dev/get-dart
 ## 2. Renderer Installation
 
 ```sh
-pnpm install @limechain/codama-dart
+pnpm install -D @limechain/codama-dart
 ```
 
 ## 3. Usage
@@ -59,7 +59,9 @@ pnpm install @limechain/codama-dart
 pnpm codama run dart
 ```
 
-### 3.3. (Only if `generateBorsh` is set to `false`) Run Dart Borsh code generation
+### 3.3. Run Dart Borsh code generation
+> [!NOTE]
+> Only if `generateBorsh` is set to `false`
 
 ```sh
   cd generated
