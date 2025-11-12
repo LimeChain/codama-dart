@@ -1,0 +1,35 @@
+
+name: Publish npm package
+
+on:
+  release:
+    types: [published]
+jobs:
+  publish-npm:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Allow reading repository contents
+      id-token: write # Required for npm publish with provenance
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: https://registry.npmjs.org/
+      
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Publish to npm
+        run: pnpm publish --provenance --access public 
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}} # Auth to npm
+      # --provenance add security metadata to the package
+      # --access public makes the package publicly accessible
