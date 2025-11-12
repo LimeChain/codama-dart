@@ -1,7 +1,6 @@
 # Codama ➤ Renderers ➤ Dart
 
 [![Tests][test-badge]][test-workflow-url]
-
 [![npm][npm-image]][npm-url]
 [![npm-downloads][npm-downloads-image]][npm-url]
 
