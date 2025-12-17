@@ -139,3 +139,4 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 **/**/generated
+test/e2e/dart_generated_workspace

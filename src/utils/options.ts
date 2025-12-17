@@ -9,7 +9,9 @@ export type RenderOptions = GetRenderMapOptions & {
 };
 
 export type GetRenderMapOptions = {
+    enableWorkspace?: boolean;
     nameTransformers?: Partial<import('./nameTransformers').NameTransformers>;
+    workspaceOutDir?: string;
 };
 
 export type RenderScope = {
