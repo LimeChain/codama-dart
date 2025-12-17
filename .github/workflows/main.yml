@@ -90,7 +90,10 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Auto-approve the PR
+      - name: Setup GitHub CLI
+        uses: cli/cli-action@v2
+
+      - name: Auto-approve Dependabot PR
         run: gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
