@@ -1,4 +1,21 @@
-import { accountNode, bytesTypeNode, constantPdaSeedNode, constantPdaSeedNodeFromString, fixedSizeTypeNode, instructionAccountNode, instructionArgumentNode, instructionNode, numberTypeNode, numberValueNode, pdaLinkNode, pdaNode, programNode, publicKeyTypeNode, stringTypeNode, variablePdaSeedNode } from '@codama/nodes';
+import {
+    accountNode,
+    bytesTypeNode,
+    constantPdaSeedNode,
+    constantPdaSeedNodeFromString,
+    fixedSizeTypeNode,
+    instructionAccountNode,
+    instructionArgumentNode,
+    instructionNode,
+    numberTypeNode,
+    numberValueNode,
+    pdaLinkNode,
+    pdaNode,
+    programNode,
+    publicKeyTypeNode,
+    stringTypeNode,
+    variablePdaSeedNode,
+} from '@codama/nodes';
 import { getFromRenderMap } from '@codama/renderers-core';
 import { visit } from '@codama/visitors-core';
 import { test } from 'vitest';
@@ -102,7 +119,7 @@ test('it renders a default impl for instruction data struct', () => {
         'final accounts = <AccountMeta>[];',
         'final instructionData = ByteArray.empty();',
         "programId: programId ?? Ed25519HDPublicKey.fromBase58('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),",
-    ]); 
+    ]);
 });
 
 test('it renders a byte array seed used on an account', () => {
@@ -150,7 +167,6 @@ test('it renders a byte array seed used on an account', () => {
     ]);
 });
 
-
 test('it renders an empty array of seeds for seedless PDAs', () => {
     // Given the following program with 1 account and 1 pda with empty seeds.
     const node = programNode({
@@ -163,16 +179,12 @@ test('it renders an empty array of seeds for seedless PDAs', () => {
         ],
         instructions: [
             instructionNode({
-                accounts: [
-                    instructionAccountNode({ isSigner: false, isWritable: true, name: 'testAccount' }),
-                ],
+                accounts: [instructionAccountNode({ isSigner: false, isWritable: true, name: 'testAccount' })],
                 name: 'myInstruction',
             }),
         ],
         name: 'splToken',
-        pdas: [
-            pdaNode({ name: 'testPda', seeds: [] }),
-        ],
+        pdas: [pdaNode({ name: 'testPda', seeds: [] })],
         publicKey: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
     });
 
@@ -214,8 +226,8 @@ test('it renders constant PDA seeds as prefix consts', () => {
             instructionNode({
                 accounts: [
                     instructionAccountNode({
-                        isSigner: false,    
-                        isWritable: true,   
+                        isSigner: false,
+                        isWritable: true,
                         name: 'testAccount',
                     }),
                 ],

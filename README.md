@@ -10,8 +10,6 @@
 [test-badge]: https://github.com/LimeChain/codama-dart/actions/workflows/test.yaml/badge.svg
 [test-workflow-url]: https://github.com/LimeChain/codama-dart/actions/workflows/test.yaml
 
-
-
 This package generates Dart clients from your Codama IDLs. The generated clients are compatible with the [Solana Dart package](https://pub.dev/packages/solana).
 
 ## 1. Prerequisites
@@ -65,6 +63,7 @@ pnpm codama run dart
 ```
 
 ### 3.3. Run Dart Borsh code generation
+
 > [!NOTE]
 > Only if `generateBorsh` is set to `false`
 

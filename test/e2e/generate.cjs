@@ -1,12 +1,10 @@
 #!/usr/bin/env -S node
-const { createFromRoot } = require('codama');
-const { rootNodeFromAnchor } = require('@codama/nodes-from-anchor');
 
 const path = require('node:path');
 const process = require('node:process');
 
+const { createFromRoot } = require('codama');
 const { readJson } = require('@codama/renderers-core');
-
 const { renderVisitor } = require('../../dist/index.node.cjs');
 
 async function main() {
@@ -18,7 +16,6 @@ async function main() {
 }
 
 async function generateProject(project) {
-    console.log(`Generating code for project: ${project}`);
     const idl = readJson(path.join(__dirname, project, 'idl.json'));
 
     const codama = createFromRoot(idl);

@@ -1,25 +1,58 @@
-
 name: Build Codama Dart
 
 on:
   push:
 
+env:
+  NODE_VERSION: 20
+
 jobs:
   build:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-        - name: Setup Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: '20.x'
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
 
-        - name: Install pnpm
-          run: npm install -g pnpm
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
 
-        - name: Install dependencies
-          run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-        - name: Build package  
-          run: pnpm build 
+      - name: Build package
+        run: pnpm build
+
+      - name: Ensure working directory is clean
+        run: |
+          git status
+          test -z "$(git status --porcelain)"
+
+  lint:
+    name: Check styling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Compile JS and types
+        run: pnpm run build
+
+      - name: Check linting
+        run: pnpm run lint
