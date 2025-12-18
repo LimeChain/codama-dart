@@ -107,15 +107,16 @@ lib/
 
 The `renderVisitor` accepts the following options.
 
-| Name                          | Type     | Default     | Description                                                                     | 
+| Name                          | Type     | Default     | Description                                                                     |
 | ----------------------------- | -------- | ----------- | ------------------------------------------------------------------------------- |
 | `deleteFolderBeforeRendering` | `bool`   | `true`      | Flag for deleting the output folder before generating it again.                 |
 | `formatCode`                  | `bool`   | `true`      | Flag for formatting the Dart code after generation                              |
 | `generateBorsh`               | `bool`   | `true`      | Flag for running Borsh code generation after rendering                          |
 | `enableWorkspace`             | `bool`   | `false`     | Generates all clients to a shared workspace, each program in its own subfolder. |
 | `workspaceOutDir`             | `string` | `workspace` | Name of the shared workspace directory.                                         |
+
 <hr/>
 
 enableWorkspace?: boolean;
-    nameTransformers?: Partial<import('./nameTransformers').NameTransformers>;
-    workspaceOutDir?: string;
+nameTransformers?: Partial<import('./nameTransformers').NameTransformers>;
+workspaceOutDir?: string;
