@@ -61,16 +61,6 @@ jobs:
         with:
           sdk: stable
 
-      # e2e have dart example projects, run `dart pub get` in each of them to install their dependencies
-      - name: Install Dart dependencies in e2e projects
-        run: |
-          for d in e2e/*; do
-            if [ -f "$d/pubspec.yaml" ]; then
-              echo "Running dart pub get in $d"
-              (cd "$d" && dart pub get)
-            fi
-          done
-
       - name: Test package
         run: pnpm run test
 
