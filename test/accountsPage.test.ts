@@ -86,14 +86,13 @@ test('it renders the Dart account file with all imports and part directive', () 
 
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
-    
+
     codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`), [
         'library test;',
         'const TestAccount._();',
         "import 'package:borsh_annotation_extended/borsh_annotation_extended.dart';",
     ]);
 });
-
 
 test('it renders the class definition and serialization logic', () => {
     // Given the following account.

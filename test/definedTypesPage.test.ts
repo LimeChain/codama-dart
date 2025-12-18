@@ -1,4 +1,15 @@
-import { definedTypeNode, enumEmptyVariantTypeNode, enumStructVariantTypeNode, enumTypeNode, numberTypeNode, programNode, sizePrefixTypeNode, stringTypeNode, structFieldTypeNode, structTypeNode } from '@codama/nodes';
+import {
+    definedTypeNode,
+    enumEmptyVariantTypeNode,
+    enumStructVariantTypeNode,
+    enumTypeNode,
+    numberTypeNode,
+    programNode,
+    sizePrefixTypeNode,
+    stringTypeNode,
+    structFieldTypeNode,
+    structTypeNode,
+} from '@codama/nodes';
 import { getFromRenderMap } from '@codama/renderers-core';
 import { visit } from '@codama/visitors-core';
 import { test } from 'vitest';
@@ -51,7 +62,6 @@ test('it renders enum type and its variants', () => {
         'class BAccount implements BType<Account> {',
     ]);
 });
-
 
 test('it renders a prefix string on a defined type', () => {
     const node = programNode({
@@ -110,7 +120,7 @@ test('it renders a scalar enum with Copy derive', () => {
     const programId = '7ETjnyphmVcbd1TN3NuVfNDwVQ7ezHUN6HxvT7QNtWKu';
 
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
-    
+
     codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/tag.dart`), [
         'class Tag {',
         'factory Tag.uninitialized() {',
@@ -132,7 +142,6 @@ test('it renders a scalar enum with Copy derive', () => {
         'class BAccount implements BType<Account> {',
     ]);
 });
-
 
 test('it renders a non-scalar enum without Copy derive', () => {
     // Given the following program with 1 defined type using a prefixed size string.
@@ -174,7 +183,7 @@ test('it renders a non-scalar enum without Copy derive', () => {
         'factory TagWithStruct.uninitialized() {',
         'factory TagWithStruct.account({required String contentType}) {',
     ]);
-    
+
     codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tagWithStruct/account.dart`), [
         '@BorshSerializable()',
         'class Account with _$Account {',

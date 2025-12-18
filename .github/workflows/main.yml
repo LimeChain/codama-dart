@@ -1,0 +1,95 @@
+name: Main
+
+on:
+  push:
+  pull_request:
+
+env:
+  NODE_VERSION: 20
+
+jobs:
+  lint:
+    name: Check styling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Compile JS and types
+        run: pnpm run build
+
+      - name: Check linting
+        run: pnpm run lint
+
+  tests:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build package
+        run: pnpm build
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Test package
+        run: pnpm run test
+
+      - name: Ensure working directory is clean
+        run: |
+          git status
+          test -z "$(git status --porcelain)"
+
+  # Runs only on dependabot PR, runs after test pass and use github CLI to auto-approve and enable auto-merge
+  dependabot:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'LimeChain/codama-dart'
+    needs: [lint, tests]
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Setup GitHub CLI
+        uses: cli/cli-action@v2
+
+      - name: Auto-approve Dependabot PR
+        run: gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Enable auto-merge
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
