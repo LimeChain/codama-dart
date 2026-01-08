@@ -80,9 +80,6 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Setup GitHub CLI
-        uses: cli/cli-action@v2
-
       - name: Auto-approve Dependabot PR
         run: gh pr review --approve "$PR_URL"
         env:
