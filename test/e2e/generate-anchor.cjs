@@ -24,7 +24,6 @@ async function generateProject(project, isWorkspace) {
     const idl = readJson(path.join(__dirname, project, 'idl.json'));
     const codama = createFromRoot(rootNodeFromAnchor(idl)); 
 
-
     if (isWorkspace) {
         const outDir = project;
         const workspaceDir = path.join(__dirname, 'dart_generated_workspace');
