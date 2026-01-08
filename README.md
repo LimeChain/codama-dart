@@ -10,8 +10,6 @@
 [test-badge]: https://github.com/LimeChain/codama-dart/actions/workflows/test.yaml/badge.svg
 [test-workflow-url]: https://github.com/LimeChain/codama-dart/actions/workflows/test.yaml
 
-
-
 This package generates Dart clients from your Codama IDLs. The generated clients are compatible with the [Solana Dart package](https://pub.dev/packages/solana).
 
 ## 1. Prerequisites
@@ -65,6 +63,7 @@ pnpm codama run dart
 ```
 
 ### 3.3. Run Dart Borsh code generation
+
 > [!NOTE]
 > Only if `generateBorsh` is set to `false`
 
@@ -108,10 +107,12 @@ lib/
 
 The `renderVisitor` accepts the following options.
 
-| Name                          | Type   | Default | Description                                                     |
-| ----------------------------- | ------ | ------- | --------------------------------------------------------------- |
-| `deleteFolderBeforeRendering` | `bool` | `true`  | Flag for deleting the output folder before generating it again. |
-| `formatCode`                  | `bool` | `true`  | Flag for formatting the Dart code after generation              |
-| `generateBorsh`               | `bool` | `true`  | Flag for running Borsh code generation after rendering          |
+| Name                          | Type     | Default     | Description                                                                     |
+| ----------------------------- | -------- | ----------- | ------------------------------------------------------------------------------- |
+| `deleteFolderBeforeRendering` | `bool`   | `true`      | Flag for deleting the output folder before generating it again.                 |
+| `formatCode`                  | `bool`   | `true`      | Flag for formatting the Dart code after generation                              |
+| `generateBorsh`               | `bool`   | `true`      | Flag for running Borsh code generation after rendering                          |
+| `enableWorkspace`             | `bool`   | `false`     | Generates all clients to a shared workspace, each program in its own subfolder. |
+| `workspaceOutDir`             | `string` | `workspace` | Name of the shared workspace directory.                                         |
 
 <hr/>

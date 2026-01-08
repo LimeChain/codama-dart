@@ -6,6 +6,7 @@ export function generatePubspec(
         description?: string;
         devDependencies?: Record<string, string>;
         homepage?: string;
+        isInWorkspace?: boolean;
         version?: string;
     } = {},
 ): string {
@@ -25,7 +26,14 @@ export function generatePubspec(
         ...devDependencies,
     };
 
-    const sections = [`name: ${packageName}`, `description: ${description}`, `version: ${version}`, `publish_to: none`];
+    const resolution = options.isInWorkspace ? 'resolution: workspace\n' : '';
+    const sections = [
+        resolution,
+        `name: ${packageName}`,
+        `description: ${description}`,
+        `version: ${version}`,
+        `publish_to: none`,
+    ];
 
     if (author) {
         sections.push(`author: ${author}`);
@@ -35,7 +43,7 @@ export function generatePubspec(
         sections.push(`homepage: ${homepage}`);
     }
 
-    sections.push('', 'environment:', '  sdk: ">=3.0.0 <4.0.0"');
+    sections.push('', 'environment:', '  sdk: ">=3.5.0 <4.0.0"');
 
     // Add git-based dependencies
     sections.push('', 'dependencies:');

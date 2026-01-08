@@ -250,8 +250,11 @@ export function getRenderMapVisitor(
                 },
 
                 visitRoot(node, { self }) {
+                    const isInWorkspace = !!options?.enableWorkspace;
+
                     const pubspecContent = generatePubspec(packageName, {
                         description: `Generated Dart package for Solana program interaction`,
+                        isInWorkspace: isInWorkspace,
                         version: '1.0.0',
                     });
 

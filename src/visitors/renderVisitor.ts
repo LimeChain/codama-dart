@@ -5,6 +5,7 @@ import { execSync } from 'child_process';
 import path from 'path';
 
 import { RenderOptions } from '../utils';
+import { updateWorkspaceDir } from '../utils/updateWorkspaceDir';
 import { getRenderMapVisitor } from './getRenderMapVisitor';
 
 export function renderVisitor(projectPath: string, options: RenderOptions) {
@@ -23,7 +24,14 @@ export function renderVisitor(projectPath: string, options: RenderOptions) {
         const packageName = path.basename(projectPath);
 
         const renderMap = visit(root, getRenderMapVisitor(options, packageName, programName, programPublicKey));
-        writeRenderMap(renderMap, projectPath);
+
+        if (options.enableWorkspace) {
+            const workspaceDir = updateWorkspaceDir(options.workspaceOutDir, packageName);
+            projectPath = path.join(workspaceDir, packageName);
+            writeRenderMap(renderMap, projectPath);
+        } else {
+            writeRenderMap(renderMap, projectPath);
+        }
 
         if (options.formatCode ?? true) {
             try {
