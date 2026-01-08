@@ -116,7 +116,3 @@ The `renderVisitor` accepts the following options.
 | `workspaceOutDir`             | `string` | `workspace` | Name of the shared workspace directory.                                         |
 
 <hr/>
-
-enableWorkspace?: boolean;
-nameTransformers?: Partial<import('./nameTransformers').NameTransformers>;
-workspaceOutDir?: string;
