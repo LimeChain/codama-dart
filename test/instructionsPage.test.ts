@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import {
     accountNode,
     bytesTypeNode,
@@ -42,7 +43,7 @@ test('it renders a public instruction data struct', () => {
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
     // Then we expect the following pub struct.
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/mintTokens.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/mintTokens.dart`).content as string, [
         'Instruction mintTokensInstruction({',
         'Ed25519HDPublicKey? programId',
         'final accounts = <AccountMeta>[];',
@@ -79,7 +80,7 @@ test('it renders an instruction with a remainder str', () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/addMemo.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/addMemo.dart`).content as string, [
         '@BorshSerializable()',
         'class AddMemoInstructionData with _$AddMemoInstructionData {',
         'factory AddMemoInstructionData({',
@@ -113,7 +114,7 @@ test('it renders a default impl for instruction data struct', () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/mintTokens.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/mintTokens.dart`).content as string, [
         'Instruction mintTokensInstruction({',
         'Ed25519HDPublicKey? programId',
         'final accounts = <AccountMeta>[];',
@@ -150,7 +151,7 @@ test('it renders a byte array seed used on an account', () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/myInstruction.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/myInstruction.dart`).content as string, [
         '@BorshSerializable()',
         'class MyInstructionInstructionData with _$MyInstructionInstructionData {',
         'factory MyInstructionInstructionData({',
@@ -197,7 +198,7 @@ test('it renders an empty array of seeds for seedless PDAs', () => {
 
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/myInstruction.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/myInstruction.dart`).content as string, [
         'Instruction myInstructionInstruction({',
         'required Ed25519HDPublicKey testAccount,',
         'Ed25519HDPublicKey? programId',
@@ -257,7 +258,7 @@ test('it renders constant PDA seeds as prefix consts', () => {
 
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/myInstruction.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/myInstruction.dart`).content as string, [
         'Instruction myInstructionInstruction({',
         'required Ed25519HDPublicKey testAccount,',
         'Ed25519HDPublicKey? programId',
@@ -305,7 +306,7 @@ test('it renders an instruction with multiple accounts', () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/transfer.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/transfer.dart`).content as string, [
         'Instruction transferInstruction({',
         'required Ed25519HDPublicKey source,',
         'required Ed25519HDPublicKey destination,',
@@ -360,26 +361,29 @@ test('it renders an instruction with both arguments and accounts', () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/instructions/transferWithAmount.dart`), [
-        '@BorshSerializable()',
-        'class TransferWithAmountInstructionData with _$TransferWithAmountInstructionData {',
-        'factory TransferWithAmountInstructionData({',
-        '@BFixedBytes(8) required Uint8List discriminator,',
-        '@BU64() required BigInt amount,',
-        "if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got ${discriminator.length}');",
-        'return _TransferWithAmountInstructionData(',
-        'discriminator: discriminator,',
-        'amount: amount,',
-        'static TransferWithAmountInstructionData fromBorsh(Uint8List data) {',
-        'Instruction transferWithAmountInstruction({',
-        'required Ed25519HDPublicKey source,',
-        'required TransferWithAmountInstructionData data,',
-        'final accounts = [',
-        'AccountMeta(',
-        'pubKey: source,',
-        'isSigner: true,',
-        'isWriteable: true,',
-        'final instructionData = ByteArray(data.toBorsh());',
-        "programId: programId ?? Ed25519HDPublicKey.fromBase58('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),",
-    ]);
+    codeContains(
+        getFromRenderMap(renderMap, `lib/${programName}/instructions/transferWithAmount.dart`).content as string,
+        [
+            '@BorshSerializable()',
+            'class TransferWithAmountInstructionData with _$TransferWithAmountInstructionData {',
+            'factory TransferWithAmountInstructionData({',
+            '@BFixedBytes(8) required Uint8List discriminator,',
+            '@BU64() required BigInt amount,',
+            "if (discriminator.length != 8) throw ArgumentError('discriminator must be exactly 8 bytes, got ${discriminator.length}');",
+            'return _TransferWithAmountInstructionData(',
+            'discriminator: discriminator,',
+            'amount: amount,',
+            'static TransferWithAmountInstructionData fromBorsh(Uint8List data) {',
+            'Instruction transferWithAmountInstruction({',
+            'required Ed25519HDPublicKey source,',
+            'required TransferWithAmountInstructionData data,',
+            'final accounts = [',
+            'AccountMeta(',
+            'pubKey: source,',
+            'isSigner: true,',
+            'isWriteable: true,',
+            'final instructionData = ByteArray(data.toBorsh());',
+            "programId: programId ?? Ed25519HDPublicKey.fromBase58('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),",
+        ],
+    );
 });
