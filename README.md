@@ -8,7 +8,7 @@
 [npm-image]: https://img.shields.io/npm/v/@limechain/codama-dart.svg?style=flat&label=%40limechain%2Fcodama-dart
 [npm-url]: https://www.npmjs.com/package/@limechain/codama-dart
 [test-badge]: https://github.com/LimeChain/codama-dart/actions/workflows/test.yaml/badge.svg
-[test-workflow-url]: https://github.com/LimeChain/codama-dart/actions/workflows/test.yaml
+[test-workflow-url]: https://github.com/LimeChain/codama-dart/actions/workflows/main.yml
 
 This package generates Dart clients from your Codama IDLs. The generated clients are compatible with the [Solana Dart package](https://pub.dev/packages/solana).
 
