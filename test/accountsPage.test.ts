@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import {
     accountNode,
     camelCase,
@@ -49,7 +50,7 @@ test('it renders the Dart account class structure', () => {
 
     // Then we expect the following identifier and reference to the byte array
     // as a parameters to be rendered.
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`).content as string, [
         '@BorshSerializable()',
         'class TestAccount with _$TestAccount {',
         'factory TestAccount({',
@@ -87,7 +88,7 @@ test('it renders the Dart account file with all imports and part directive', () 
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`).content as string, [
         'library test;',
         'const TestAccount._();',
         "import 'package:borsh_annotation_extended/borsh_annotation_extended.dart';",
@@ -125,7 +126,7 @@ test('it renders the class definition and serialization logic', () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`).content as string, [
         "part 'testAccount.g.dart';",
         '@BorshSerializable()',
         'class TestAccount with _$TestAccount {',
@@ -168,7 +169,7 @@ test('it renders the toString method implementation', () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/accounts/testAccount.dart`).content as string, [
         '@override',
         'String toString([int indent = 0]) {',
         'final buffer = StringBuffer();',
