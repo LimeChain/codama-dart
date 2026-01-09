@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import { errorNode, programNode } from '@codama/nodes';
 import { getFromRenderMap } from '@codama/renderers-core';
 import { visit } from '@codama/visitors-core';
@@ -36,7 +37,7 @@ test('it renders codes for errors', () => {
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
     // Then we expect the following errors with codes.
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/errors/splToken.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/errors/splToken.dart`).content as string, [
         'class SplTokenErrors {',
         'static const int INVALID_INSTRUCTION = 6000;',
         'static const int INVALID_PROGRAM = 7000;',

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import {
     definedTypeNode,
     enumEmptyVariantTypeNode,
@@ -41,21 +42,21 @@ test('it renders enum type and its variants', () => {
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
     // Then we expect the following use and identifier to be rendered.
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/tag.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/tag.dart`).content as string, [
         'class Tag {',
         'factory Tag.uninitialized() {',
         'factory Tag.account() {',
         'Uint8List toBorsh() {',
     ]);
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/uninitialized.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/uninitialized.dart`).content as string, [
         'class Uninitialized {',
         'static Uninitialized fromBorsh(Uint8List _data) {',
         'Uint8List toBorsh() {',
         'class BUninitialized implements BType<Uninitialized> {',
     ]);
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/account.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/account.dart`).content as string, [
         'class Account {',
         'static Account fromBorsh(Uint8List _data) {',
         'Uint8List toBorsh() {',
@@ -88,7 +89,7 @@ test('it renders a prefix string on a defined type', () => {
     const programId = '7ETjnyphmVcbd1TN3NuVfNDwVQ7ezHUN6HxvT7QNtWKu';
 
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/blob.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/blob.dart`).content as string, [
         '@BorshSerializable()',
         'class Blob with _$Blob {',
         'factory Blob({',
@@ -121,20 +122,20 @@ test('it renders a scalar enum with Copy derive', () => {
 
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/tag.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/tag.dart`).content as string, [
         'class Tag {',
         'factory Tag.uninitialized() {',
         'factory Tag.account() {',
         'Uint8List toBorsh() {',
     ]);
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/uninitialized.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/uninitialized.dart`).content as string, [
         'class Uninitialized {',
         'const Uninitialized();',
         'static Uninitialized fromBorsh(Uint8List _data) {',
         'Uint8List toBorsh() {',
         'class BUninitialized implements BType<Uninitialized> {',
     ]);
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/account.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tag/account.dart`).content as string, [
         'class Account {',
         'const Account();',
         'static Account fromBorsh(Uint8List _data) {',
@@ -178,13 +179,16 @@ test('it renders a non-scalar enum without Copy derive', () => {
     // When we render it.
     const renderMap = visit(node, getRenderMapVisitor(options, packageName, programName, programId));
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tagWithStruct/tagWithStruct.dart`), [
-        'class TagWithStruct {',
-        'factory TagWithStruct.uninitialized() {',
-        'factory TagWithStruct.account({required String contentType}) {',
-    ]);
+    codeContains(
+        getFromRenderMap(renderMap, `lib/${programName}/types/tagWithStruct/tagWithStruct.dart`).content as string,
+        [
+            'class TagWithStruct {',
+            'factory TagWithStruct.uninitialized() {',
+            'factory TagWithStruct.account({required String contentType}) {',
+        ],
+    );
 
-    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tagWithStruct/account.dart`), [
+    codeContains(getFromRenderMap(renderMap, `lib/${programName}/types/tagWithStruct/account.dart`).content as string, [
         '@BorshSerializable()',
         'class Account with _$Account {',
         'factory Account({',
@@ -194,7 +198,8 @@ test('it renders a non-scalar enum without Copy derive', () => {
         'return _$AccountFromBorsh(data);',
     ]);
 
-    codeDoesNotContains(getFromRenderMap(renderMap, `lib/${programName}/types/tagWithStruct/account.dart`), [
-        'const Account();',
-    ]);
+    codeDoesNotContains(
+        getFromRenderMap(renderMap, `lib/${programName}/types/tagWithStruct/account.dart`).content as string,
+        ['const Account();'],
+    );
 });

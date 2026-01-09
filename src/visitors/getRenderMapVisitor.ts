@@ -266,7 +266,7 @@ export function getRenderMapVisitor(
                                     rootNode: node,
                                 }),
                             ),
-                            ['pubspec.yaml']: pubspecContent,
+                            ['pubspec.yaml']: { content: pubspecContent },
                         }),
                         ...getAllPrograms(node).map(p => visit(p, self)),
                     ]);
